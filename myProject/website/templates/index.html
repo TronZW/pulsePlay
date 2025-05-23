@@ -15,15 +15,15 @@
     {% include 'navigation.html' %}
     <main id="main" class="main">
 
-    <div class="pagetitle">
-      <h1>Dashboard</h1>
-      <nav>
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Overview</li>
-        </ol>
-      </nav>
-    </div>
+        <div class="pagetitle">
+            <h1>Dashboard</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+                    <li class="breadcrumb-item active">Overview</li>
+                </ol>
+            </nav>
+        </div>
 
 </header>
 <!-- End Page Title -->
@@ -116,66 +116,113 @@
                 <!-- Reports -->
                 <div class="col-12">
                     <div class="card">
-
-
                         <div class="card-body">
-                            <h5 class="card-title">Behavioral Statistics</h5>
+                            <h5 class="card-title">Behavioral Risk Radar</h5>
 
-                            <div id="budgetChart"  style="min-height: 400px; width: 100%;" class="echart"></div>
+                            {% if not has_scan %}
+                            <div style="text-align: center; padding: 100px 0;">
+                                <p>Please make a scan first to see your behavioral risk radar.</p>
+                                <a href="{% url 'predict' %}" class="btn btn-primary">Make a Scan</a>
+                            </div>
+                            {% else %}
+                            <div id="behaviorRadarChart" style="min-height: 400px; width: 100%;"></div>
+
                             <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const chart = echarts.init(document.getElementById("budgetChart"));
+                                document.addEventListener("DOMContentLoaded", () => {
+                                  const chart = echarts.init(document.getElementById("behaviorRadarChart"));
 
-    const option = {
-      legend: {
-        data: ['Predicted behavior', 'Actual behavior']
-      },
-      radar: {
-        shape: 'polygon',
-        name: {
-          textStyle: {
-            color: '#000',
-            fontSize: 14
-          }
-        },
-        indicator: [
-          { name: 'Loss chasing', max: 6500 },
-          { name: 'Binge betting', max: 16000 },
-          { name: 'Fluctuating wages', max: 30000 },
-          { name: 'Impulsive transactions', max: 38000 },
-          { name: 'Risk volatility', max: 52000 }
-        ]
-      },
-      series: [{
-        name: 'Predicted vs Actual',
-        type: 'radar',
-        data: [
-          {
-            value: [4200, 3000, 20000, 35000, 50000],
-            name: 'Predicted behavior'
-          },
-          {
-            value: [5000, 14000, 28000, 26000, 42000],
-            name: 'Actual behavior'
-          }
-        ]
-      }]
-    };
+                                  const patternNames = [
+                                    'Loss Chasing',
+                                    'Binge Gambling',
+                                    'Fluctuating Wagers',
+                                    'Impulsive Transactions',
+                                    'Monetary Consumption'
+                                  ];
 
-    chart.setOption(option);
-     window.addEventListener('resize', () => {
-      chart.resize();
-    });
-  });
-</script>
+                                  // Pass patternScores from Django context to JS
+                                  const patternScores = {{ pattern_scores|safe }};
 
+                                  const indicators = patternNames.map(name => ({
+                                    name: name,
+                                    max: 100
+                                  }));
 
+                                  const option = {
+                                    tooltip: {
+                                      show: true  // Disable tooltip completely
+                                    },
+                                    radar: {
+                                      indicator: indicators,
+                                      shape: 'polygon',
+                                      radius: '65%',
+                                      name: {
+                                        textStyle: {
+                                          color: '#000',
+                                          fontSize: 14
+                                        }
+                                      },
+                                      splitLine: {
+                                        lineStyle: {
+                                          color: '#cce6ff'
+                                        }
+                                      },
+                                      splitArea: {
+                                        areaStyle: {
+                                          color: ['#e6f3ff', '#ffffff']
+                                        }
+                                      },
+                                      axisLine: {
+                                        lineStyle: {
+                                          color: '#99ccff'
+                                        }
+                                      }
+                                    },
+                                    series: [{
+                                      name: 'Predicted Behavior',
+                                      type: 'radar',
+                                      symbol: 'circle',
+                                      symbolSize: 8,
+                                      data: [
+                                        {
+                                          value: patternScores,
+                                          name: 'Predicted Behavior',
+                                          lineStyle: {
+                                            color: '#1E90FF',
+                                            width: 2
+                                          },
+                                          areaStyle: {
+                                            color: 'rgba(30, 144, 255, 0.2)'
+                                          },
+                                          itemStyle: {
+                                            color: '#1E90FF'
+                                          },
+                                          label: {
+                                            show: true,
+                                            formatter: function(params) {
+                                              return params.value;
+                                            },
+                                            color: '#1E90FF',
+                                            fontWeight: 'bold',
+                                            fontSize: 14,
+                                            distance: 10
+                                          }
+                                        }
+                                      ]
+                                    }]
+                                  };
 
+                                  chart.setOption(option);
+                                  window.addEventListener("resize", () => {
+                                    chart.resize();
+                                  });
+                                });
+                            </script>
+                            {% endif %}
 
 
                         </div>
                     </div>
-                </div><!-- End Reports -->
+                </div><!-- End Radar Chart Card -->
 
                 <!-- Recent Sales -->
                 <div class="col-12">
@@ -228,61 +275,40 @@
 
 
             <!-- Budget Report -->
-            <div class="card">
-                <div class="card-body pb-0" style="height: 400px; position: relative;">
+          <div class="card">
+    <div class="card-body pb-0" style="height: 400px; position: relative;">
+        <h5 class="card-title">Risk Profile</h5>
 
-  <h5 class="card-title">Risk profile</h5>
-
-  <!-- Risk Summary (hidden by default) -->
-  <p id="riskSummary"
-     >
-    <strong>Risk profile:</strong> <span id="riskLevel">Moderate-risk gambler</span>
-      <strong>Gambling patterns detected:</strong>
-      <ol>
-                    <li>Loss chasing</li>
-                    <li>Impulsive transactions</li>
+        {% if has_scan %}
+            <p id="riskSummary">
+                <strong>Risk profile:</strong>
+                <span id="riskLevel">{{ risk_cluster|default:"Unknown" }}</span>
+                <br><br><strong>Concerning risk patterns:</strong>
+                <ol>
+                    {% for pattern, score in high_risk_patterns.items %}
+                        <li>{{ pattern }} – Score: {{ score }}%</li>
+                    {% empty %}
+                        <li>No risky gambling behaviors detected.</li>
+                    {% endfor %}
                 </ol>
+            </p>
+        {% else %}
+            <div id="scanPrompt"
+                 style="position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 20px); display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                <p style="font-size: 16px; margin-bottom: 10px; text-align: center;">
+                    You have not made a scan yet.
+                </p>
+                <button onclick="performScan()" class="btn btn-primary">Scan Now</button>
+            </div>
+        {% endif %}
+    </div>
 
-
-  </p>
-
-  <!-- Scan Prompt (centered by flex) -->
-  <div id="scanPrompt"
-       style="position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 20px); display: flex; align-items: center; justify-content: center; flex-direction: column;">
-    <p style="font-size: 16px; margin-bottom: 10px; text-align: center;">You have not made a scan yet.</p>
-    <button onclick="performScan()" class="btn btn-primary">Scan Now</button>
-  </div>
-
+    <script>
+        function performScan() {
+            window.location.href = "/scan"; // Replace with your actual scan URL
+        }
+    </script>
 </div>
-
-<script>
-  const userHasScan = true; // Set to false to test "Scan Now" prompt
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const summary = document.getElementById("riskSummary");
-    const prompt = document.getElementById("scanPrompt");
-
-    if (userHasScan) {
-      summary.style.display = "block";
-      prompt.style.display = "none";
-      document.getElementById("riskLevel").textContent = "Moderate-risk gambler";
-    } else {
-      summary.style.display = "none";
-      prompt.style.display = "flex";
-    }
-  });
-
-  function performScan() {
-    alert("Redirecting to scan...");
-    // Replace with actual logic (e.g., window.location.href = '/scan')
-  }
-</script>
-
-
-
-
-            </div><!-- End Budget Report -->
-
 
             <!-- News & Updates Traffic -->
             <div class="card">

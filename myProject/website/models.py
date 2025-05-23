@@ -68,7 +68,6 @@ class Bet(models.Model):
     currency_code = models.CharField(max_length=3, default='USD')
     objects = models.manager
 
-
     class Meta:
         indexes = [
             models.Index(fields=['gambler', 'placed_at']),
@@ -78,3 +77,53 @@ class Bet(models.Model):
 
     def __str__(self):
         return f"Bet {self.bet_id} - {self.gambler.username}"
+
+
+class Stats(models.Model):
+    calculated_at = models.DateTimeField(auto_now_add=True)  # When these stats were computed
+    avg_total_bets = models.FloatField()
+    avg_total_stake = models.DecimalField(max_digits=15, decimal_places=2)
+    avg_avg_stake = models.DecimalField(max_digits=10, decimal_places=2)
+    avg_max_stake = models.DecimalField(max_digits=10, decimal_places=2)
+    avg_min_stake = models.DecimalField(max_digits=10, decimal_places=2)
+    avg_total_payout = models.DecimalField(max_digits=15, decimal_places=2)
+    avg_win_count = models.FloatField()
+    avg_total_loss = models.DecimalField(max_digits=15, decimal_places=2)
+    avg_win_rate = models.FloatField()
+    objects = models.manager
+
+    class Meta:
+        db_table = 'stats'
+
+    def __str__(self):
+        return f"Aggregate Stats at {self.calculated_at}"
+
+
+class GamblerScanResult(models.Model):
+    gambler = models.OneToOneField(Gambler, on_delete=models.CASCADE, related_name="scan_result")
+    has_scan = models.BooleanField(default=False)
+    previous_scan = models.DateTimeField(null=True, blank=True)
+
+    loss_chasing_score = models.DecimalField(max_digits=5, decimal_places=2)
+    loss_chasing_severity = models.CharField(max_length=20)
+
+    fluctuating_wagers_score = models.DecimalField(max_digits=5, decimal_places=2)
+    fluctuating_wagers_severity = models.CharField(max_length=20)
+
+    impulsive_transactions_score = models.DecimalField(max_digits=5, decimal_places=2)
+    impulsive_transactions_severity = models.CharField(max_length=20)
+
+    binge_gambling_score = models.DecimalField(max_digits=5, decimal_places=2)
+    binge_gambling_severity = models.CharField(max_length=20)
+
+    monetary_consumption_score = models.DecimalField(max_digits=5, decimal_places=2)
+    monetary_consumption_severity = models.CharField(max_length=20)
+
+    cluster_label = models.CharField(max_length=50)
+    objects = models.manager
+
+    class Meta:
+        db_table = 'gambler_scan_results'
+
+    def __str__(self):
+        return f"Scan Result for {self.gambler.username}"

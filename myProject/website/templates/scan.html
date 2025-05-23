@@ -1,112 +1,264 @@
 {% extends 'base.html' %}
 {%block content%}
- <header id="header" class="header fixed-top d-flex align-items-center">
+<header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
-      <a href="index.html" class="logo d-flex align-items-center">
-        <img src="assets/img/logo.png" alt="">
-        <span class="d-none d-lg-block">PulsePlay</span>
-      </a>
-      <i class="bi bi-list toggle-sidebar-btn"></i>
+        <a href="index.html" class="logo d-flex align-items-center">
+            <img src="assets/img/logo.png" alt="">
+            <span class="d-none d-lg-block">PulsePlay</span>
+        </a>
+        <i class="bi bi-list toggle-sidebar-btn"></i>
     </div><!-- End Logo -->
 
-{% include 'navigation.html' %}
-     <main id="main" class="main">
+    {% include 'navigation.html' %}
+    <main id="main" class="main">
 
-    <div class="pagetitle">
-      <h1>Review</h1>
-      <nav>
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Scan bets</a></li>
-          <li class="breadcrumb-item active">Review</li>
-        </ol>
-      </nav>
+        <div class="pagetitle">
+            <h1>Review</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html">Scan bets</a></li>
+                    <li class="breadcrumb-item active">Review</li>
+                </ol>
+            </nav>
+        </div>
+
+</header>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Risk profile statistics</h5>
+        <p><strong>Risk level</strong>: {{cluster}} </p>
+        <p>After scanning your bets, pulsePlay has determined that you are at {{cluster}}. Remember to give a colour to
+            a cluster detected to make the page more interactive.</p>
+        <h6 class="card-title">Summary </h6>
+        <p>You made a total of {{total_bets}} bets and won {{win_count}} of them. This gives you a win rate of
+            {{win_rate}}% .
+            The total amount staked is $ {{total_stake}} and in return you won $ {{total_payout}}. This gives you a
+            total gain/loss of $ {{total_loss}}.
+            The highest amount staked at once was $ {{max_stake}} and your lowest was $ {{min_stake}}. You staked $
+            {{avg_stake}} in most of your bets, and most of the bets you placed were for the (favourite game).
+        </p>
+
+
     </div>
+</div><!-- End Default Card -->
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">How you compare to others</h5>
 
-  </header>
- <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Risk profile statistics</h5>
-                <p><strong>Risk level</strong>: {{cluster}} </p>
-                <p>After scanning your bets, pulsePlay has determined that you are at {{cluster}}. Remember to give a colour to a cluster detected to make the page more interactive.</p>
-                <h6 class="card-title">Summary </h6>
-                <p>You made a total of {{total_bets}} bets and won {{win_count}} of them. This gives you a win rate of {{win_rate}}% .
-                    The total amount staked is $ {{total_stake}} and in return you won $ {{total_payout}}. This gives you a total gain/loss of $ {{total_loss}}.
-                    The highest amount staked at once was $ {{max_stake}} and your lowest was $ {{min_stake}}. You staked  $ {{avg_stake}} in most of your bets, and most of the bets you placed were for the (favourite game).
-                </p>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Category</th>
+                <th scope="col">Your value</th>
+                <th scope="col">Performance</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% if total_bets > avg_total_bets %}
+            <tr class="table-danger">
+                <th scope="row">Total bets</th>
+                <td>{{total_bets}}</td>
+                <td>Higher than average</td>
+            </tr>
+            {% elif total_bets < avg_total_bets %}
+            <tr class="table-success">
+                <th scope="row">Total stake</th>
+                <td>$ {{total_stake}}</td>
+                <td>Lower than average</td>
+            </tr>
+            {%else %}
+            <tr class="table-light">
+                <th scope="row">Total stake</th>
+                <td>$ {{total_stake}}</td>
+                <td>Average</td>
+            </tr>
+            {% endif %}
 
+            {% if avg_stake > avg_avg_stake %}
+            <tr class="table-danger">
+                <th scope="row">Average stake</th>
+                <td>$ {{avg_stake}}</td>
+                <td>Higher than average</td>
+            </tr>
+            {% elif avg_stake < avg_avg_stake %}
+            <tr class="table-success">
+                <th scope="row">Average stake</th>
+                <td>$ {{avg_stake}}</td>
+                <td>Lower than average</td>
+            </tr>
+            {% else %}
+            <tr class="table-light">
+                <th scope="row">Average stake</th>
+                <td>$ {{avg_stake}}</td>
+                <td>Average</td>
+            </tr>
+            {% endif %}
 
+            {% if max_stake > avg_max_stake %}
+            <tr class="table-danger">
+                <th scope="row">Highest stake</th>
+                <td>$ {{max_stake}}</td>
+                <td>Higher than average of $ {{avg_max_stake}}</td>
+            </tr>
+            {% elif max_stake < avg_max_stake %}
+            <tr class="table-success">
+                <th scope="row">Highest stake</th>
+                <td>$ {{max_stake}}</td>
+                <td>Lower than average of $ {{avg_max_stake}}</td>
+            </tr>
+            {% else %}
+            <tr class="table-light">
+                <th scope="row">Highest stake</th>
+                <td>$ {{max_stake}}</td>
+                <td>Average</td>
+            </tr>
+            {% endif %}
 
-            </div>
-          </div><!-- End Default Card -->
- <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">How you compare to others</h5>
+            {% if min_stake > avg_min_stake %}
 
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th scope="col">Category</th>
-                    <th scope="col">Your value</th>
-                    <th scope="col">Performance</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <tr class="table-danger">
+                <th scope="row">Lowest stake</th>
+                <td>$ {{min_stake}}</td>
+                <td>Higher than minimum of $ {{avg_min_stake}}</td>
+            </tr>
+            {% elif min_stake < avg_min_stake %}
+            <tr class="table-success">
+                <th scope="row">Lowest stake</th>
+                <td>$ {{min_stake}}</td>
+                <td>Lower than minimum of $ {{avg_min_stake}}</td>
+            </tr>
+            {% else %}
+            <tr class="table-success">
+                <th scope="row">Lowest stake</th>
+                <td>$ {{min_stake}}</td>
+                <td>Average</td>
+            </tr>
+            {% endif %}
+            {% if total_payout > avg_total_payout %}
+            <tr class="table-success">
+                <th scope="row">Total payout</th>
+                <td>$ {{total_payout}}</td>
+                <td>Better than average of $ {{avg_total_payout}}</td>
+            </tr>
+            {% elif total_payout < avg_total_payout %}
+            <tr class="table-danger">
+                <th scope="row">Total payout</th>
+                <td>$ {{total_payout}}</td>
+                <td>Less than average of $ {{avg_total_payout}}</td>
+            </tr>
+            {% else %}
+            <tr class="table-light">
+                <th scope="row">Total payout</th>
+                <td>$ {{total_payout}}</td>
+                <td>Average</td>
+            </tr>
+            {% endif %}
+            {% if win_count > avg_win_count %}
+            <tr class="table-success">
+                <th scope="row">Win count</th>
+                <td>{{win_count}} wins</td>
+                <td>Better than average of {{avg_win_count}} wins</td>
+            </tr>
+            {% elif win_count < avg_win_count %}
+            <tr class="table-danger">
+                <th scope="row">Win count</th>
+                <td>{{win_count}} wins</td>
+                <td>Lower than average of {{avg_win_count}} wins</td>
+            </tr>
+            {% else %}
+            <tr class="table-light">
+                <th scope="row">Win count</th>
+                <td>{{win_count}} wins</td>
+                <td>Average</td>
+            </tr>
+            {% endif %}
+            {% if win_rate > avg_win_rate %}
+            <tr class="table-success">
+                <th scope="row">Win rate</th>
+                <td>{{win_rate}} %</td>
+                <td>Better than average of {{avg_win_rate}}</td>
+            </tr>
+            {% elif win_rate < avg_win_rate %}
+            <tr class="table-danger">
+                <th scope="row">Win rate</th>
+                <td>{{win_rate}} %</td>
+                <td>Lower than average of {{avg_win_rate}}</td>
+            </tr>
+            {% else %}
+            <tr class="table-light">
+                <th scope="row">Win rate</th>
+                <td>{{win_rate}} %</td>
+                <td>Average</td>
+            </tr>
+            {% endif %}
 
-                  <tr class="table-primary">
-                    <th scope="row">Total bets</th>
-                    <td>{{total_bets}}</td>
-                    <td>Cell</td>
-                  </tr>
-                  <tr class="table-secondary">
-                    <th scope="row">Total stake</th>
-                    <td>$ {{total_stake}}</td>
-                    <td>Cell</td>
-                  </tr>
-                  <tr class="table-success">
-                    <th scope="row">Average stake</th>
-                    <td>$ {{avg_stake}} </td>
-                    <td>Cell</td>
-                  </tr>
-                  <tr class="table-danger">
-                    <th scope="row">Highest stake</th>
-                    <td>$ {{max_stake}}</td>
-                    <td>Cell</td>
-                  </tr>
-                  <tr class="table-warning">
-                    <th scope="row">Lowest stake</th>
-                    <td>$ {{min_stake}}</td>
-                    <td>Cell</td>
-                  </tr>
-                  <tr class="table-info">
-                    <th scope="row">Total payout</th>
-                    <td>$ {{total_payout}}</td>
-                    <td>Cell</td>
-                  </tr>
-                  <tr class="table-light">
-                    <th scope="row">Win count</th>
-                    <td>{{win_count}} wins</td>
-                    <td>Cell</td>
-                  </tr>
-                  <tr class="table-dark">
-                    <th scope="row">Win rate</th>
-                    <td>{{win_rate}} %</td>
-                    <td>Cell</td>
-                  </tr>
-                  <tr class="table-dark">
-                    <th scope="row">Total loss</th>
-                    <td>$ {{total_loss}}</td>
-                    <td>Cell</td>
-                  </tr>
-                </tbody>
-              </table>
-              <!-- End Table Variants -->
+            {% if total_loss > avg_total_loss %}
+            <tr class="table-danger">
+                <th scope="row">Total loss</th>
+                <td>$ {{total_loss}}</td>
+                <td>You have lost more than average of $ {{avg_total_loss}}</td>
+            </tr>
+            {% elif total_loss < avg_total_loss %}
+            <tr class="table-success">
+                <th scope="row">Total loss</th>
+                <td>$ {{total_loss}}</td>
+                <td>You have lost less than average of $ {{avg_total_loss}}</td>
+            </tr>
+            {% else %}
+            <tr class="table-danger">
+                <th scope="row">Total loss</th>
+                <td>$ {{total_loss}}</td>
+                <td>Average</td>
+            </tr>
+            {% endif %}
+            </tbody>
+        </table>
+        <!-- End Table Variants -->
 
-            </div>
-          </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Risky gambling patterns detected</h5>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Risky pattern</th>
+                <th scope="col">Risk score</th>
+                <th scope="col">Severity</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for data in results %}
+            {% if data.severity == "Low" %}
+            <tr class="table-success">
+                {% elif data.severity == "Moderate"%}
+            <tr class="table-warning">
+                {% elif data.severity == "High" %}
+            <tr class="table-danger">
+                {% else %}
+            <tr class="table-danger">
+                {% endif %}
+                <th scope="row">{{data.pattern}}</th>
+                <td>{{ data.score}} %</td>
+                <td>{{data.severity}}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% if recommendations %}
+  <h3>💡 Our Recommendations for You:</h3>
+  <ul>
+    {% for message in recommendations %}
+      <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p> No concerning patterns were detected. Keep gambling responsibly!</p>
+{% endif %}
 
-
-
-
+    </div>
+</div>
 
 {%endblock%}

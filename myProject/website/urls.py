@@ -8,4 +8,5 @@ urlpatterns = [
     path('activateUser/', views.activateUser, name='activateUser'),
     path('scan/', views.scanner, name='scanner'),
     path('predict/', views.predict_cluster, name='predict'),
+    path('mybets/', views.mybets, name='mybets'),
 ]

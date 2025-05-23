@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+    .bet-card {
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .bet-header {
+      padding: 0.75rem 1rem;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .bet-body {
+      padding: 1rem;
+    }
+    .bet-lost {
+      background-color: #dc3545;
+    }
+    .bet-won {
+      background-color: #198754;
+    }
+    .bet-details {
+      font-size: 0.95rem;
+    }
+</style>
+
+
+<!-- LOST Bet Card -->
+<div class="bet-card">
+    <div class="bet-header bet-lost">
+        <span>12/04/2024 21:17</span>
+        <span>Bet ID: 649657604</span>
+        <strong>LOST</strong>
+    </div>
+    <div class="bet-body">
+        <div><strong>Combo (3)</strong></div>
+        <div class="text-muted bet-details">
+            Excelsior Rotterdam - FC Volendam | CD Leganes - Espanyol Barcelona | FC Augsburg - Union Berlin
+        </div>
+        <hr>
+        <div class="bet-details">
+            <div>Stake: <strong>1.52 USD</strong></div>
+            <div>Win Boost (2.5%): <strong>0.08 USD</strong></div>
+            <div>Max Payout: <strong>3.37 USD</strong></div>
+            <div>Payout: <strong>0.00 USD</strong></div>
+        </div>
+        <div class="text-primary mt-2" style="cursor:pointer;">View Betslip</div>
+    </div>
+</div>
+
+<!-- WON Bet Card -->
+<div class="bet-card">
+    <div class="bet-header bet-won">
+        <span>12/04/2024 18:58</span>
+        <span>Bet ID: 649387653</span>
+        <strong>WON</strong>
+    </div>
+    <div class="bet-body">
+        <div><strong>Combo (3)</strong></div>
+        <div class="text-muted bet-details">
+            AEL Limassol - Othellos Athienou | FK Rigas Futbola Skola - FK Tukums 2000/TSS | Greuther Furth ...
+        </div>
+        <hr>
+        <div class="bet-details">
+            <div>Stake: <strong>2.3 USD</strong></div>
+            <div>Max Payout: <strong>3.52 USD</strong></div>
+            <div>Payout: <strong>3.52 USD</strong></div>
+        </div>
+        <div class="text-primary mt-2" style="cursor:pointer;">View Betslip</div>
+    </div>
+</div>
+
+
+{% endblock %}

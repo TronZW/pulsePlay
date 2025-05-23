@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Q, Count, Sum, Avg, Min, Max
+from django.db.models import Q, Count, Sum, Avg, Min, Max, F
 from .models import Gambler
 from .models import Bet
+from .models import Stats
 import numpy as np
 import pandas as pd
 import joblib
@@ -13,6 +14,10 @@ from django.db.models import FloatField, ExpressionWrapper
 import os
 from decimal import Decimal
 from django.db.models import DecimalField
+from .randomForest import *
+from .models import GamblerScanResult
+from django.utils.timezone import now
+from django.core.paginator import Paginator
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'models')
 kmeans = joblib.load(os.path.join(MODEL_PATH, 'kmeans_model.pkl'))
@@ -28,22 +33,117 @@ def home(request):
                 bets_won = Bet.objects.filter(Q(gambler=request.user.id) & Q(bet_status="won")).count()
                 win_rate = int((bets_won / total_bets) * 100)
                 slip = Bet.objects.filter(gambler=request.user.id)
+                try:
+                    scan = GamblerScanResult.objects.filter(gambler=request.user.id).latest('previous_scan')
+                    has_scan = True
+                    # Extract previous scores from the scan object, adjust attribute names accordingly
+                    patterns = {
+                        "loss chasing": float(scan.loss_chasing_score),
+                        "binge gambling": float(scan.binge_gambling_score),
+                        "fluctuating wagers": float(scan.fluctuating_wagers_score),
+                        "impulsive transactions": float(scan.impulsive_transactions_score),
+                        "monetary consumption": float(scan.monetary_consumption_score)
+                    }
+                    high_risk_patterns = {k: v for k, v in patterns.items() if v > 40}
+
+                    pattern_scores = [
+                        float(scan.loss_chasing_score),
+                        float(scan.binge_gambling_score),
+                        float(scan.fluctuating_wagers_score),
+                        float(scan.impulsive_transactions_score),
+                        float(scan.monetary_consumption_score)
+                    ]
+                except Exception as e:
+                    has_scan = False
+                    pattern_scores = []
+                    high_risk_patterns = {}
+
                 context = {
                     "bets": total_bets,
                     "wins": bets_won,
                     "rate": win_rate,
                     "slip": slip,
+                    "has_scan": has_scan,
+                    "pattern_scores": pattern_scores,
+                    "high_risk_patterns": high_risk_patterns,
+                    "risk_cluster": scan.cluster_label
 
                 }
                 return render(request, "index.html", context)
 
             except Exception as e:
+
                 total_bets = 404
+
                 context = {
                     "bets": total_bets,
 
                 }
                 return render(request, "index.html", context)
+        elif request.user.is_superuser == 1:
+            # Step 1: Annotate per-user stats
+            user_stats = (
+                Bet.objects.values('gambler')
+                .annotate(
+                    total_bets=Count('gambler_id'),
+                    total_stake=Coalesce(Sum('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+                    avg_stake=Coalesce(Avg('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+                    total_payout=Coalesce(Sum('payout_amount'), Decimal('0.00'), output_field=DecimalField()),
+                    max_stake=Coalesce(Max('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+                    min_stake=Coalesce(Min('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+                    win_count=Count('gambler_id', filter=Q(bet_status='won')),
+                    total_loss=Coalesce(Sum(
+                        ExpressionWrapper(F('stake_amount') - F('payout_amount'), output_field=FloatField())
+                        , filter=~Q(bet_status='won')), 0.0),
+                )
+                .annotate(
+                    win_rate=ExpressionWrapper(
+                        F('win_count') * 1.0 / F('total_bets'),
+                        output_field=FloatField()
+                    )
+                )
+                .filter(total_bets__gte=15)
+            )
+
+            # Step 2: Compute average of each stat across users
+            user_count = user_stats.count() or 1  # avoid division by zero
+
+            # Convert QuerySet to list to iterate multiple times
+            user_stats_list = list(user_stats)
+
+            # Step 3: Sum all per-user values
+            aggregate_sums = {
+                'avg_total_bets': sum(u['total_bets'] for u in user_stats_list) / user_count,
+                'avg_total_stake': sum(u['total_stake'] for u in user_stats_list) / user_count,
+                'avg_avg_stake': sum(u['avg_stake'] for u in user_stats_list) / user_count,
+                'avg_max_stake': sum(u['max_stake'] for u in user_stats_list) / user_count,
+                'avg_min_stake': sum(u['min_stake'] for u in user_stats_list) / user_count,
+                'avg_total_payout': sum(u['total_payout'] for u in user_stats_list) / user_count,
+                'avg_win_count': sum(u['win_count'] for u in user_stats_list) / user_count,
+                'avg_total_loss': sum(u['total_loss'] for u in user_stats_list) / user_count,
+                'avg_win_rate': sum(u['win_rate'] for u in user_stats_list) / user_count,
+            }
+
+            # Round results (optional)
+            aggregate_sums = {k: round(v, 4) for k, v in aggregate_sums.items()}
+            Stats.objects.update_or_create(
+                id=1,  # or some known identifier
+                defaults={
+                    'avg_total_bets': aggregate_sums['avg_total_bets'],
+                    'avg_total_stake': aggregate_sums['avg_total_stake'],
+                    'avg_avg_stake': aggregate_sums['avg_avg_stake'],
+                    'avg_max_stake': aggregate_sums['avg_max_stake'],
+                    'avg_min_stake': aggregate_sums['avg_min_stake'],
+                    'avg_total_payout': aggregate_sums['avg_total_payout'],
+                    'avg_win_count': aggregate_sums['avg_win_count'],
+                    'avg_total_loss': aggregate_sums['avg_total_loss'],
+                    'avg_win_rate': aggregate_sums['avg_win_rate'],
+                }
+            )
+
+            # Print result
+            print(aggregate_sums)
+            return render(request, "indexAdmin.html", {})
     else:
         return render(request, "index.html", {})
 
@@ -111,17 +211,7 @@ def predict_cluster(request):
 
         win_rate = user_stats['win_count'] / user_stats['total_bets']
         total_loss = user_stats['total_stake'] - user_stats['total_payout']
-        print("total bets " + str(user_stats['total_bets']))
-        print("total stake:" + str(user_stats['total_stake']))
-        print("average stake:" + str(user_stats['avg_stake']))
-        print("total payout:" + str(user_stats['total_payout']))
-        print("max stake:" + str(user_stats['max_stake']))
-        print("min stake:" + str(user_stats['min_stake']))
-        print("win count" + str(user_stats['win_count']))
-        print("win rate:" + str(win_rate))
-        print("total loss:" + str(total_loss))
-
-        print(kmeans.n_clusters)
+        stats = Stats.objects.order_by('-calculated_at').first()
 
         user_df = pd.DataFrame([{
             "total_bets": user_stats['total_bets'],
@@ -144,6 +234,36 @@ def predict_cluster(request):
             2: "High-Risk Gambler"
         }
         risk_label = cluster_label_map.get(cluster, "Unknown")
+        scores = predict_gambler_behavior(request.user.id)
+        raw_results = label_risk_severity(scores)
+
+        results = []
+        for pattern, data in raw_results.items():
+            display_name = pattern.replace("_", " ").title()
+            results.append({
+                "pattern": display_name,
+                "score": data["score_percent"],
+                "severity": data["severity"]
+            })
+        recommendations = get_user_messages(results)
+        # Save or update scan results
+        scan_data = {
+            "gambler": request.user,
+            "cluster_label": risk_label,
+            "loss_chasing_score": raw_results["loss_chasing_score"]["score_percent"],
+            "loss_chasing_severity": raw_results["loss_chasing_score"]["severity"],
+            "fluctuating_wagers_score": raw_results["fluctuating_wagers_score"]["score_percent"],
+            "fluctuating_wagers_severity": raw_results["fluctuating_wagers_score"]["severity"],
+            "impulsive_transactions_score": raw_results["impulsive_transactions_score"]["score_percent"],
+            "impulsive_transactions_severity": raw_results["impulsive_transactions_score"]["severity"],
+            "binge_gambling_score": raw_results["binge_gambling_score"]["score_percent"],
+            "binge_gambling_severity": raw_results["binge_gambling_score"]["severity"],
+            "monetary_consumption_score": raw_results["monetary_consumption_score"]["score_percent"],
+            "monetary_consumption_severity": raw_results["monetary_consumption_score"]["severity"],
+            "has_scan": True,
+            "previous_scan": now(),
+        }
+        GamblerScanResult.objects.update_or_create(gambler=request.user.id, defaults=scan_data)
 
         context = {
             "cluster": risk_label,
@@ -156,6 +276,17 @@ def predict_cluster(request):
             "win_count": user_stats["win_count"],
             "win_rate": int(win_rate * 100),
             "total_loss": total_loss,
+            'avg_total_bets': int(stats.avg_total_bets),
+            'avg_total_stake': int(stats.avg_total_stake),
+            'avg_avg_stake': int(stats.avg_avg_stake),
+            'avg_max_stake': int(stats.avg_max_stake),
+            'avg_min_stake': int(stats.avg_min_stake),
+            'avg_total_payout': int(stats.avg_total_payout),
+            'avg_win_count': int(stats.avg_win_count),
+            'avg_total_loss': int(stats.avg_total_loss),
+            'avg_win_rate': int(stats.avg_win_rate * 100),
+            'results': results,
+            'recommendations': recommendations
         }
 
         return render(request, "scan.html", context)
@@ -165,3 +296,18 @@ def predict_cluster(request):
 
 def scanner(request):
     return render(request, "scan.html", {})
+
+
+def mybets(request):
+    bets = Bet.objects.filter(gambler=request.user.id).order_by('-placed_at')
+
+    paginator = Paginator(bets, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "mybets.html", {
+
+        'page_obj': page_obj
+    })
+
+
