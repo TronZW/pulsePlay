@@ -1,79 +1,211 @@
 {% extends 'base.html' %}
 {% block content %}
+<header id="header" class="header fixed-top d-flex align-items-center">
 
-<style>
-    .bet-card {
-      border: 1px solid #dee2e6;
-      border-radius: 0.5rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-    .bet-header {
-      padding: 0.75rem 1rem;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .bet-body {
-      padding: 1rem;
-    }
-    .bet-lost {
-      background-color: #dc3545;
-    }
-    .bet-won {
-      background-color: #198754;
-    }
-    .bet-details {
-      font-size: 0.95rem;
-    }
-</style>
+    <div class="d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center">
+            <img src="assets/img/logo.png" alt="">
+            <span class="d-none d-lg-block">PulsePlay</span>
+        </a>
+        <i class="bi bi-list toggle-sidebar-btn"></i>
+    </div><!-- End Logo -->
 
+    {% include 'navigation.html' %}
+    <main id="main" class="main">
 
-<!-- LOST Bet Card -->
-<div class="bet-card">
-    <div class="bet-header bet-lost">
-        <span>12/04/2024 21:17</span>
-        <span>Bet ID: 649657604</span>
-        <strong>LOST</strong>
-    </div>
-    <div class="bet-body">
-        <div><strong>Combo (3)</strong></div>
-        <div class="text-muted bet-details">
-            Excelsior Rotterdam - FC Volendam | CD Leganes - Espanyol Barcelona | FC Augsburg - Union Berlin
+        <div class="pagetitle">
+            <h1>Dashboard</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+                    <li class="breadcrumb-item active">Overview</li>
+                </ol>
+            </nav>
         </div>
-        <hr>
-        <div class="bet-details">
-            <div>Stake: <strong>1.52 USD</strong></div>
-            <div>Win Boost (2.5%): <strong>0.08 USD</strong></div>
-            <div>Max Payout: <strong>3.37 USD</strong></div>
-            <div>Payout: <strong>0.00 USD</strong></div>
-        </div>
-        <div class="text-primary mt-2" style="cursor:pointer;">View Betslip</div>
-    </div>
-</div>
 
-<!-- WON Bet Card -->
-<div class="bet-card">
-    <div class="bet-header bet-won">
-        <span>12/04/2024 18:58</span>
-        <span>Bet ID: 649387653</span>
-        <strong>WON</strong>
-    </div>
-    <div class="bet-body">
-        <div><strong>Combo (3)</strong></div>
-        <div class="text-muted bet-details">
-            AEL Limassol - Othellos Athienou | FK Rigas Futbola Skola - FK Tukums 2000/TSS | Greuther Furth ...
-        </div>
-        <hr>
-        <div class="bet-details">
-            <div>Stake: <strong>2.3 USD</strong></div>
-            <div>Max Payout: <strong>3.52 USD</strong></div>
-            <div>Payout: <strong>3.52 USD</strong></div>
-        </div>
-        <div class="text-primary mt-2" style="cursor:pointer;">View Betslip</div>
-    </div>
-</div>
+</header>
+<!-- End Page Title -->
+
+<section class="section dashboard">
+    <div class="row">
+
+        <!-- Left side columns -->
+        <div class="col-lg-8">
+            <div class="row">
+
+                <!-- Sales Card -->
+                <div class="col-xxl-4 col-md-6">
+                    <div class="card info-card sales-card">
+
+                        <div class="filter">
+                            <a class="icon" href="#" data-bs-toggle="dropdown"></a>
+
+                        </div>
+
+                        <div class="card-body">
+                            <h5 class="card-title">Avg bets per user </h5>
+
+                            <div class="d-flex align-items-center">
+                                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-dice-5"></i>
+                                </div>
+                                <div class="ps-3">
+                                    <h6>{{avg_total_bets}} Bets</h6>
+                                    <span class="text-success small pt-1 fw-bold">12%</span> <span
+                                        class="text-muted small pt-2 ps-1">increase</span>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div><!-- End Sales Card -->
+
+                <!-- Revenue Card -->
+                <div class="col-xxl-4 col-md-6">
+                    <div class="card info-card revenue-card">
 
 
-{% endblock %}
+                        <div class="card-body">
+                            <h5 class="card-title">Avg wins per user </h5>
+
+                            <div class="d-flex align-items-center">
+                                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-hand-thumbs-up"></i>
+                                </div>
+                                <div class="ps-3">
+                                    <h6>{{avg_win_count}} Wins</h6>
+                                    <span class="text-success small pt-1 fw-bold">8%</span> <span
+                                        class="text-muted small pt-2 ps-1">increase</span>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div><!-- End Revenue Card -->
+
+                <!-- Customers Card -->
+                <div class="col-xxl-4 col-xl-12">
+
+                    <div class="card info-card customers-card">
+
+
+                        <div class="card-body">
+                            <h5 class="card-title">Avg Win Rate </h5>
+
+                            <div class="d-flex align-items-center">
+                                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-graph-up"></i>
+                                </div>
+                                <div class="ps-3">
+                                    <h6>{{avg_win_rate}} %</h6>
+                                    <span class="text-danger small pt-1 fw-bold">12%</span> <span
+                                        class="text-muted small pt-2 ps-1">decrease</span>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div><!-- End Customers Card -->
+
+
+            </div>
+        </div><!-- End Left side columns -->
+
+        <!-- Right side columns -->
+        <div class="col-lg-4">
+
+
+            <!-- Budget Report -->
+            <div class="card">
+                <div class="card-body pb-0" style="height: 350px; position: relative;">
+                    <h5 class="card-title">Risk Profile</h5>
+
+                    {% if has_scan %}
+                    <p id="riskSummary">
+                        <strong>Risk profile:</strong>
+                        <span id="riskLevel">{{ risk_cluster|default:"Unknown" }}</span>
+                        <br><br><strong>Concerning risk patterns:</strong>
+                    <ol>
+                        {% for pattern, score in high_risk_patterns.items %}
+                        <li>{{ pattern }} – Score: {{ score }}%</li>
+                        {% empty %}
+                        <li>No risky gambling behaviors detected.</li>
+                        {% endfor %}
+                    </ol>
+                    </p>
+                    {% else %}
+                    <div id="scanPrompt"
+                         style="position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 20px); display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                        <p style="font-size: 16px; margin-bottom: 10px; text-align: center;">
+                            You have not made a scan yet.
+                        </p>
+                        <button onclick="performScan()" class="btn btn-primary">Scan Now</button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <script>
+                    function performScan() {
+                        window.location.href = "/scan"; // Replace with your actual scan URL
+                    }
+                </script>
+            </div>
+
+
+        </div><!-- End Right side columns -->
+
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Potential triggers</h5>
+            <table class="table table-borderless datatable">
+                <thead>
+                <tr>
+                    <th scope="col">id</th>
+                    <th scope="col">Trigger type</th>
+                    <th scope="col">Explanation</th>
+                    <th scope="col">Value</th>
+                    <th scope="col">Gambler</th>
+                    <th scope="col">Actions Taken</th>
+                    <th scope="col">Triggered At</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for trigger in triggers %}
+                <tr>
+                    <td>{{ trigger.id }}</td>
+                    <td>{{ trigger.trigger_type }}</td>
+                    <td>{{ trigger.explanation }}</td>
+                    <td>{{ trigger.value }}</td>
+                    <td>{{ trigger.gambler.username }}</td>
+                    <td>{{ trigger.actions_taken }}</td>
+                    <td>{{ trigger.triggered_at }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+
+        </div>
+    </div><!-- End Default Card -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Self-reporting</h5>
+
+
+        </div>
+    </div><!-- End Default Card -->
+</section>
+
+</main><!-- End #main -->
+
+<footer id="footer" class="footer">
+    <div class="copyright">
+        &copy; Copyright <strong><span>UZ 2025</span></strong>. By Ronlly Mapiye
+    </div>
+
+    {% endblock %}

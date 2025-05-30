@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 
 # Create your models here.
@@ -127,3 +128,46 @@ class GamblerScanResult(models.Model):
 
     def __str__(self):
         return f"Scan Result for {self.gambler.username}"
+
+
+class Trigger(models.Model):
+    TRIGGER_TYPES = [
+        ('loss_chasing', 'Loss Chasing'),
+        ('binge_gambling', 'Binge Gambling'),
+        ('impulsive_transactions', 'Impulsive Transactions'),
+        ('fluctuating_wagers', 'Fluctuating Wagers'),
+        ('monetary_consumption', 'Monetary Consumption'),
+        ('highest_bet', 'Highest Bet'),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    gambler = models.ForeignKey(Gambler, on_delete=models.CASCADE, related_name='triggers')
+    trigger_type = models.CharField(max_length=32, choices=TRIGGER_TYPES)
+    explanation = models.TextField()
+    actions_taken = models.TextField(blank=True)
+    value = models.DecimalField(max_digits=12,
+                                decimal_places=2)  # This holds the trigger value (e.g. score or highest bet amount)
+    triggered_at = models.DateTimeField(default=timezone.now)
+    objects = models.manager
+
+    class Meta:
+        unique_together = ('gambler', 'trigger_type')
+        ordering = ['-triggered_at']
+
+    def __str__(self):
+        return f"{self.gambler} - {self.get_trigger_type_display()}"
+
+
+class SelfReport(models.Model):
+    id = models.AutoField(primary_key=True)
+    gambler = models.ForeignKey(Gambler, on_delete=models.CASCADE, related_name='self_reports')
+    username = models.CharField(max_length=150)  # Cached snapshot of the username at time of report
+    report_message = models.TextField()
+    reported_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'self_reports'
+        ordering = ['-reported_at']
+
+    def __str__(self):
+        return f"Self-report by {self.username} at {self.reported_at.strftime('%Y-%m-%d %H:%M')}"

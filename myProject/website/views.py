@@ -6,6 +6,7 @@ from django.db.models import Q, Count, Sum, Avg, Min, Max, F
 from .models import Gambler
 from .models import Bet
 from .models import Stats
+from .models import Trigger
 import numpy as np
 import pandas as pd
 import joblib
@@ -80,72 +81,9 @@ def home(request):
 
                 }
                 return render(request, "index.html", context)
-        elif request.user.is_superuser == 1:
-            # Step 1: Annotate per-user stats
-            user_stats = (
-                Bet.objects.values('gambler')
-                .annotate(
-                    total_bets=Count('gambler_id'),
-                    total_stake=Coalesce(Sum('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
-                    avg_stake=Coalesce(Avg('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
-                    total_payout=Coalesce(Sum('payout_amount'), Decimal('0.00'), output_field=DecimalField()),
-                    max_stake=Coalesce(Max('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
-                    min_stake=Coalesce(Min('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
-                    win_count=Count('gambler_id', filter=Q(bet_status='won')),
-                    total_loss=Coalesce(Sum(
-                        ExpressionWrapper(F('stake_amount') - F('payout_amount'), output_field=FloatField())
-                        , filter=~Q(bet_status='won')), 0.0),
-                )
-                .annotate(
-                    win_rate=ExpressionWrapper(
-                        F('win_count') * 1.0 / F('total_bets'),
-                        output_field=FloatField()
-                    )
-                )
-                .filter(total_bets__gte=15)
-            )
-
-            # Step 2: Compute average of each stat across users
-            user_count = user_stats.count() or 1  # avoid division by zero
-
-            # Convert QuerySet to list to iterate multiple times
-            user_stats_list = list(user_stats)
-
-            # Step 3: Sum all per-user values
-            aggregate_sums = {
-                'avg_total_bets': sum(u['total_bets'] for u in user_stats_list) / user_count,
-                'avg_total_stake': sum(u['total_stake'] for u in user_stats_list) / user_count,
-                'avg_avg_stake': sum(u['avg_stake'] for u in user_stats_list) / user_count,
-                'avg_max_stake': sum(u['max_stake'] for u in user_stats_list) / user_count,
-                'avg_min_stake': sum(u['min_stake'] for u in user_stats_list) / user_count,
-                'avg_total_payout': sum(u['total_payout'] for u in user_stats_list) / user_count,
-                'avg_win_count': sum(u['win_count'] for u in user_stats_list) / user_count,
-                'avg_total_loss': sum(u['total_loss'] for u in user_stats_list) / user_count,
-                'avg_win_rate': sum(u['win_rate'] for u in user_stats_list) / user_count,
-            }
-
-            # Round results (optional)
-            aggregate_sums = {k: round(v, 4) for k, v in aggregate_sums.items()}
-            Stats.objects.update_or_create(
-                id=1,  # or some known identifier
-                defaults={
-                    'avg_total_bets': aggregate_sums['avg_total_bets'],
-                    'avg_total_stake': aggregate_sums['avg_total_stake'],
-                    'avg_avg_stake': aggregate_sums['avg_avg_stake'],
-                    'avg_max_stake': aggregate_sums['avg_max_stake'],
-                    'avg_min_stake': aggregate_sums['avg_min_stake'],
-                    'avg_total_payout': aggregate_sums['avg_total_payout'],
-                    'avg_win_count': aggregate_sums['avg_win_count'],
-                    'avg_total_loss': aggregate_sums['avg_total_loss'],
-                    'avg_win_rate': aggregate_sums['avg_win_rate'],
-                }
-            )
-
-            # Print result
-            print(aggregate_sums)
-            return render(request, "indexAdmin.html", {})
     else:
-        return render(request, "index.html", {})
+        messages.success(request, "You are not allowed to access this location")
+        return redirect('login')
 
 
 def loginUser(request):
@@ -156,14 +94,21 @@ def loginUser(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            messages.success(request, "You have logged in successfully")
-            return redirect('home')
+            if request.user.is_superuser == 0:
+                return redirect('home')
+            else:
+                return redirect('homeAdmin')
         else:
-            messages.success(request, "An error occured during login, please try again")
-
+            messages.success(request, "Incorrect username or password. Please try again")
             return redirect('login')
     else:
         return render(request, "login.html", {})
+
+
+def logoutUser(request):
+    logout(request)
+    messages.success(request, "You have logged out")
+    return redirect('login')
 
 
 def activate(request):
@@ -181,7 +126,6 @@ def activateUser(request):
                 user = Gambler.objects.get(Q(username=username))
                 if user.username == username:
                     user.set_password(password1)
-                    messages.success(request, "Password input complete")
                     user.save()
                     return redirect('login')
 
@@ -191,7 +135,8 @@ def activateUser(request):
                 return redirect('login')
 
     else:
-        return render(request, "login.html", {})
+        messages.success(request, "An error occured, please try again")
+        return redirect('login')
 
 
 def predict_cluster(request):
@@ -291,7 +236,8 @@ def predict_cluster(request):
 
         return render(request, "scan.html", context)
     else:
-        return render(request, "login.html", {})
+        messages.success(request, "You are not allowed to access this location")
+        return redirect('login')
 
 
 def scanner(request):
@@ -299,15 +245,129 @@ def scanner(request):
 
 
 def mybets(request):
-    bets = Bet.objects.filter(gambler=request.user.id).order_by('-placed_at')
+    if request.user.is_authenticated:
+        bets = Bet.objects.filter(gambler=request.user.id).order_by('-placed_at')
 
-    paginator = Paginator(bets, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+        paginator = Paginator(bets, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        elided_range = paginator.get_elided_page_range(
+            number=page_obj.number, on_each_side=2, on_ends=1
+        )
 
-    return render(request, "mybets.html", {
+        return render(request, "mybets.html", {
 
-        'page_obj': page_obj
-    })
+            'page_obj': page_obj,
+            'elided_range': elided_range
+        })
+
+    else:
+        messages.success(request, "You are not allowed to access this location")
+        return redirect('login')
 
 
+def homeAdmin(request):
+    if request.user.is_authenticated:
+        # Step 1: Annotate per-user stats
+        user_stats = (
+            Bet.objects.values('gambler')
+            .annotate(
+                total_bets=Count('gambler_id'),
+                total_stake=Coalesce(Sum('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+                avg_stake=Coalesce(Avg('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+                total_payout=Coalesce(Sum('payout_amount'), Decimal('0.00'), output_field=DecimalField()),
+                max_stake=Coalesce(Max('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+                min_stake=Coalesce(Min('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+                win_count=Count('gambler_id', filter=Q(bet_status='won')),
+                total_loss=Coalesce(Sum(
+                    ExpressionWrapper(F('stake_amount') - F('payout_amount'), output_field=FloatField())
+                    , filter=~Q(bet_status='won')), 0.0),
+            )
+            .annotate(
+                win_rate=ExpressionWrapper(
+                    F('win_count') * 1.0 / F('total_bets'),
+                    output_field=FloatField()
+                )
+            )
+            .filter(total_bets__gte=15)
+        )
+
+        # Step 2: Compute average of each stat across users
+        user_count = user_stats.count() or 1  # avoid division by zero
+
+        # Convert QuerySet to list to iterate multiple times
+        user_stats_list = list(user_stats)
+
+        # Step 3: Sum all per-user values
+        aggregate_sums = {
+            'avg_total_bets': sum(u['total_bets'] for u in user_stats_list) / user_count,
+            'avg_total_stake': sum(u['total_stake'] for u in user_stats_list) / user_count,
+            'avg_avg_stake': sum(u['avg_stake'] for u in user_stats_list) / user_count,
+            'avg_max_stake': sum(u['max_stake'] for u in user_stats_list) / user_count,
+            'avg_min_stake': sum(u['min_stake'] for u in user_stats_list) / user_count,
+            'avg_total_payout': sum(u['total_payout'] for u in user_stats_list) / user_count,
+            'avg_win_count': sum(u['win_count'] for u in user_stats_list) / user_count,
+            'avg_total_loss': sum(u['total_loss'] for u in user_stats_list) / user_count,
+            'avg_win_rate': sum(u['win_rate'] for u in user_stats_list) / user_count,
+        }
+
+        # Round results (optional)
+        aggregate_sums = {k: round(v, 4) for k, v in aggregate_sums.items()}
+        Stats.objects.update_or_create(
+            id=1,  # or some known identifier
+            defaults={
+                'avg_total_bets': aggregate_sums['avg_total_bets'],
+                'avg_total_stake': aggregate_sums['avg_total_stake'],
+                'avg_avg_stake': aggregate_sums['avg_avg_stake'],
+                'avg_max_stake': aggregate_sums['avg_max_stake'],
+                'avg_min_stake': aggregate_sums['avg_min_stake'],
+                'avg_total_payout': aggregate_sums['avg_total_payout'],
+                'avg_win_count': aggregate_sums['avg_win_count'],
+                'avg_total_loss': aggregate_sums['avg_total_loss'],
+                'avg_win_rate': aggregate_sums['avg_win_rate'],
+            }
+        )
+        # code for detecting the triggers found in the gambler's data
+        HIGH_STAKE_THRESHOLD = Decimal('450.00')
+
+        # Get all bets above the threshold
+        high_bets = Bet.objects.filter(stake_amount__gte=HIGH_STAKE_THRESHOLD)
+
+        for bet in high_bets:
+            gambler = bet.gambler
+            highest_bet = Bet.objects.filter(gambler=gambler).aggregate(Max('stake_amount'))['stake_amount__max']
+            # Checking  if a 'highest_bet' trigger already exists for this gambler
+            trigger_exists = Trigger.objects.filter(
+                gambler=gambler,
+                trigger_type='highest_bet'
+            ).exists()
+
+            if not trigger_exists:
+                Trigger.objects.create(
+                    gambler=gambler,
+                    trigger_type='highest_bet',
+                    value=highest_bet,
+                    explanation="Extremely high stake detected",
+                    actions_taken="None"
+                )
+
+        all_triggers = Trigger.objects.select_related('gambler').order_by('-triggered_at')
+
+        context = {
+            'avg_total_bets': int(aggregate_sums['avg_total_bets']),
+            'avg_total_stake': int(aggregate_sums['avg_total_stake']),
+            'avg_avg_stake': int(aggregate_sums['avg_avg_stake']),
+            'avg_max_stake': int(aggregate_sums['avg_max_stake']),
+            'avg_min_stake': int(aggregate_sums['avg_min_stake']),
+            'avg_total_payout': int(aggregate_sums['avg_total_payout']),
+            'avg_win_count': int(aggregate_sums['avg_win_count']),
+            'avg_total_loss': int(aggregate_sums['avg_total_loss']),
+            'avg_win_rate': int((aggregate_sums['avg_win_rate']) * 100),
+            'triggers': all_triggers
+
+        }
+        return render(request, "indexAdmin.html", context)
+
+    else:
+        messages.success(request, "You are not allowed to access this location")
+        return redirect('login')

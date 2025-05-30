@@ -24,47 +24,134 @@
         </div>
 
 </header>
- <div class="col-lg-6">
 
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">My bets</h5>
-                <div class="container">
-  {% for bet in page_obj %}
-    <div class="bet-card mb-3 border rounded shadow-sm">
-      <div class="p-2 text-white d-flex justify-content">
-        <span>{{ bet.placed_at }}</span>
-        <span>Bet ID: {{ bet.id }}</span>
-        <strong>{{ bet.status }}</strong>
-      </div>
-      <div class="p-3">
-        <div><strong>Combo ({{ bet.num_games }})</strong></div>
-        <div class="text-muted small">{{ bet.description }}</div>
-        <hr>
-        <div>
-          <div>Stake: <strong>{{ bet.stake }} USD</strong></div>
-          {% if bet.win_boost %}<div>Win Boost: <strong>{{ bet.win_boost }} USD</strong></div>{% endif %}
-          <div>Max Payout: <strong>{{ bet.max_payout }} USD</strong></div>
-          <div>Payout: <strong>{{ bet.payout }} USD</strong></div>
-        </div>
-        <div class="text-primary mt-2" style="cursor:pointer;">View Betslip</div>
-      </div>
+<style>
+    .bet-card {
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .bet-header {
+      padding: 0.75rem 1rem;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .bet-body {
+      padding: 1rem;
+    }
+    .bet-lost {
+      background-color: #dc3545;
+    }
+    .bet-won {
+      background-color: #198754;
+    }
+    .bet-details {
+      font-size: 0.95rem;
+    }
+</style>
+{% for bet in page_obj %}
+
+{% if bet.bet_status == "won" %}
+<!-- LOST Bet Card -->
+<div class="bet-card">
+    <div class="bet-header bet-won">
+        <span> {{ bet.placed_at|date:"d/m/y" }}</span>
+        <span>Bet ID: {{ bet.bet_id }}</span>
+        <strong>  <i class="bi bi-hand-thumbs-up"></i> WON</strong>
     </div>
-  {% empty %}
-    <p>No bets available.</p>
-  {% endfor %}
+    <div class="bet-body">
+         <div class="d-flex justify-content-between">
+    <div>Game:</div>
+    <strong>{{bet.game.game_type}}</strong>
+  </div>
+        <div class="d-flex justify-content-between">
+    <div>Stake:</div>
+    <strong>{{bet.stake_amount}}</strong>
+  </div>
+  <div class="d-flex justify-content-between">
+    <div>Payout:</div>
+    <strong>{{bet.payout_amount}}</strong>
+  </div>
+    </div>
+</div>
+{% elif bet.bet_status == "lost" %}
+<div class="bet-card">
+    <div class="bet-header bet-lost">
+        <span> {{ bet.placed_at|date:"d/m/y" }}</span>
+        <span>Bet ID: {{ bet.bet_id }}</span>
+            <strong>  <i class="bi bi-hand-thumbs-down"></i> LOST</strong>
+    </div>
+    <div class="bet-body">
+         <div class="d-flex justify-content-between">
+    <div>Game:</div>
+    <strong>{{bet.game.game_type}}</strong>
+  </div>
+        <div class="d-flex justify-content-between">
+    <div>Stake:</div>
+    <strong>{{bet.stake_amount}}</strong>
+  </div>
+  <div class="d-flex justify-content-between">
+    <div>Payout:</div>
+    <strong>{{bet.payout_amount}}</strong>
+  </div>
+    </div>
+</div>
+{% else %}
+<div class="bet-card">
+    <div class="bet-header bet-won">
+        <span> {{ bet.placed_at|date:"d/m/y" }}</span>
+        <span>Bet ID: {{ bet.bet_id }}</span>
+        <strong>PENDING</strong>
+    </div>
+    <div class="bet-body">
+         <div class="d-flex justify-content-between">
+    <div>Game:</div>
+    <strong>{{bet.game.game_type}}</strong>
+  </div>
+        <div class="d-flex justify-content-between">
+    <div>Stake:</div>
+    <strong>{{bet.stake_amount}}</strong>
+  </div>
+  <div class="d-flex justify-content-between">
+    <div>Payout:</div>
+    <strong>{{bet.payout_amount}}</strong>
+  </div>
+    </div>
+</div>
+{%endif%}
 
-              <!-- Basic Pagination -->
-              <nav aria-label="Page navigation example">
-                <ul class="pagination">
-                  <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-                  <li class="page-item"><a class="page-link" href="#">1</a></li>
-                  <li class="page-item"><a class="page-link" href="#">2</a></li>
-                  <li class="page-item"><a class="page-link" href="#">3</a></li>
-                  <li class="page-item"><a class="page-link" href="#">Next</a></li>
-                </ul>
-              </nav><!-- End Basic Pagination -->
+{% endfor %}
 
-            </div>
+  <nav>
+  <ul class="pagination justify-content-center">
+
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+      </li>
+    {% endif %}
+
+    {% for page in elided_range %}
+      {% if page == '…' %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% else %}
+        <li class="page-item {% if page_obj.number == page %}active{% endif %}">
+          <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+      </li>
+    {% endif %}
+
+  </ul>
+</nav>
+
 
 {%endblock%}

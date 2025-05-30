@@ -182,7 +182,7 @@
             </li>
 
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+              <a class="dropdown-item d-flex align-items-center" href="{% url 'logout'%}">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>
@@ -208,6 +208,14 @@
         </a>
       </li><!-- End Dashboard Nav -->
 
+                <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'mybets' %}">
+          <i class="bi bi-dice-5"></i>
+          <span>My Bets</span>
+        </a>
+      </li><!-- End mybets Page Nav -->
+
+
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'predict'%}">
@@ -222,6 +230,7 @@
           <span>F.A.Q</span>
         </a>
       </li><!-- End F.A.Q Page Nav -->
+
 
 
 
