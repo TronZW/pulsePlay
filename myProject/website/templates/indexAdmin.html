@@ -10,7 +10,7 @@
         <i class="bi bi-list toggle-sidebar-btn"></i>
     </div><!-- End Logo -->
 
-    {% include 'navigation.html' %}
+    {% include 'navAdmin.html' %}
     <main id="main" class="main">
 
         <div class="pagetitle">
@@ -116,49 +116,25 @@
         </div><!-- End Left side columns -->
 
         <!-- Right side columns -->
-        <div class="col-lg-4">
+      <div class="col-lg-4">
+  <!-- Self-Report Card -->
+  <div class="card">
+    <div class="card-body pb-0" style="height: 350px; position: relative; overflow-y: auto;">
+      <h5 class="card-title">Recent Self-Reports</h5>
 
-
-            <!-- Budget Report -->
-            <div class="card">
-                <div class="card-body pb-0" style="height: 350px; position: relative;">
-                    <h5 class="card-title">Risk Profile</h5>
-
-                    {% if has_scan %}
-                    <p id="riskSummary">
-                        <strong>Risk profile:</strong>
-                        <span id="riskLevel">{{ risk_cluster|default:"Unknown" }}</span>
-                        <br><br><strong>Concerning risk patterns:</strong>
-                    <ol>
-                        {% for pattern, score in high_risk_patterns.items %}
-                        <li>{{ pattern }} – Score: {{ score }}%</li>
-                        {% empty %}
-                        <li>No risky gambling behaviors detected.</li>
-                        {% endfor %}
-                    </ol>
-                    </p>
-                    {% else %}
-                    <div id="scanPrompt"
-                         style="position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 20px); display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                        <p style="font-size: 16px; margin-bottom: 10px; text-align: center;">
-                            You have not made a scan yet.
-                        </p>
-                        <button onclick="performScan()" class="btn btn-primary">Scan Now</button>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <script>
-                    function performScan() {
-                        window.location.href = "/scan"; // Replace with your actual scan URL
-                    }
-                </script>
-            </div>
-
-
-        </div><!-- End Right side columns -->
+      {% for report in self_reports %}
+        <div class="d-flex flex-column mb-3 p-2 border rounded bg-light">
+          <div class="fw-bold text-primary">{{ report.username }}</div>
+          <div class="text-muted small">{{ report.reported_at|date:"M d, Y - H:i" }}</div>
+          <div class="mt-1">{{ report.report_message|truncatechars:120 }}</div>
+        </div>
+      {% empty %}
+        <p class="text-muted">No recent reports.</p>
+      {% endfor %}
 
     </div>
+  </div>
+</div>
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">Potential triggers</h5>
@@ -192,13 +168,7 @@
 
         </div>
     </div><!-- End Default Card -->
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Self-reporting</h5>
 
-
-        </div>
-    </div><!-- End Default Card -->
 </section>
 
 </main><!-- End #main -->

@@ -27,7 +27,12 @@
 
 </header>
 <!-- End Page Title -->
-
+{% for message in messages %}
+<div class="alert alert-success alert-dismissible" role="alert">
+    <strong>{{message}}</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="close"></button>
+</div>
+{% endfor%}
 <section class="section dashboard">
     <div class="row">
 

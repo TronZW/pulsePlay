@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{%block content%}
+<header id="header" class="header fixed-top d-flex align-items-center">
+
+    <div class="d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center">
+            <img src="assets/img/logo.png" alt="">
+            <span class="d-none d-lg-block">PulsePlay</span>
+        </a>
+        <i class="bi bi-list toggle-sidebar-btn"></i>
+    </div><!-- End Logo -->
+
+    {% include 'navAdmin.html' %}
+    <main id="main" class="main">
+
+        <div class="pagetitle">
+            <h1>Profile</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html">Scan bets</a></li>
+                    <li class="breadcrumb-item active">Review</li>
+                </ol>
+            </nav>
+        </div>
+
+</header>
+{% for message in messages %}
+<div class="alert alert-success alert-dismissible" role="alert">
+    <strong>{{message}}</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="close"></button>
+</div>
+{% endfor%}
+<div class="container mt-5">
+  <h3 class="mb-4">🔍 Search Gambler Profile</h3>
+  <form method="get" class="mb-4" action="{% url 'gambler' %}">
+    <div class="input-group">
+      <input type="text" name="username" class="form-control" placeholder="Enter username" value="{{ query }}" required>
+      <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+  </form>
+
+  {% if user_profile %}
+ <div class="card mb-4">
+  <div class="card-body">
+    <h4 class="card-title">Gambler Profile: {{ user_profile.username }}</h4>
+    <hr>
+    <div class="d-flex justify-content-between">
+      <span><strong>User ID:</strong></span>
+      <span>{{ user_profile.id }}</span>
+    </div>
+    <div class="d-flex justify-content-between">
+      <span><strong>Email:</strong></span>
+      <span>{{ user_profile.email }}</span>
+    </div>
+    <div class="d-flex justify-content-between">
+      <span><strong>Account Status:</strong></span>
+      <span><span class="badge bg-secondary">{{ user_profile.account_status|capfirst }}</span></span>
+    </div>
+    <div class="d-flex justify-content-between">
+      <span><strong>Balance:</strong></span>
+      <span>{{ user_profile.balance }} {{ user_profile.currency_code }}</span>
+    </div>
+    <div class="d-flex justify-content-between">
+      <span><strong>Last Login:</strong></span>
+      <span>{{ user_profile.last_login|date:"M d, Y - H:i" }}</span>
+    </div>
+
+    <!-- Actions Row -->
+    <hr>
+    <div class="d-flex justify-content-between align-items-center">
+      <strong>Actions:</strong>
+      <div>
+        <form method="post" action="{% url 'close_account' user_profile.id %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm">Close</button>
+        </form>
+        <form method="post" action="{% url 'suspend_account' user_profile.id %}" class="d-inline ms-2">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-warning btn-sm">Suspend</button>
+        </form>
+        <form method="post" action="{% url 'activate_account' user_profile.id %}" class="d-inline ms-2">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-sm">Activate</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+  {% if scan_results %}
+  <div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">📊 Statistics</h5></div>
+    <div class="card-body">
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between"><span>Total Bets:</span><strong>{{ scan_results.total_bets }}</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Total Stake:</span><strong>{{ scan_results.total_stake }} USD</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Average Stake:</span><strong>{{ scan_results.avg_stake }} USD</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Maximum Stake:</span><strong>{{ scan_results.max_stake }} USD</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Minimum Stake:</span><strong>{{ scan_results.min_stake }} USD</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Total Payout:</span><strong>{{ scan_results.total_payout }} USD</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Win Rate:</span><strong>{{ win_rate_percent|floatformat:2 }}%</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Total Loss:</span><strong>{{ scan_results.total_loss }} USD</strong></li>
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+  {% elif query %}
+    <div class="alert alert-danger">No user found with username <strong>{{ query }}</strong>.</div>
+  {% endif %}
+</div>
+{% endblock %}

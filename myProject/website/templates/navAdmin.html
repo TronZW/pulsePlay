@@ -159,9 +159,9 @@
             </li>
 
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}">
+              <a class="dropdown-item d-flex align-items-center" href="users-profile.html">
                 <i class="bi bi-person"></i>
-                <span>My Profile</span>
+                <span>Change password</span>
               </a>
             </li>
             <li>
@@ -174,7 +174,7 @@
             <li>
               <a class="dropdown-item d-flex align-items-center" href="pages-faq.html">
                 <i class="bi bi-question-circle"></i>
-                <span>Learn more</span>
+                <span>Need Help?</span>
               </a>
             </li>
             <li>
@@ -202,16 +202,24 @@
     <ul class="sidebar-nav" id="sidebar-nav">
 
       <li class="nav-item">
-        <a class="nav-link " href="{% url 'home'%}">
+        <a class="nav-link " href="{% url 'homeAdmin' %}">
           <i class="bi bi-grid"></i>
           <span>Overview</span>
         </a>
       </li><!-- End Dashboard Nav -->
 
+          <li class="nav-item">
+        <a class="nav-link collapsed" href="{% url 'profilesAdmin' %}">
+          <i class="bi bi-people"></i>
+          <span>Profiles</span>
+        </a>
+      </li><!-- End F.A.Q Page Nav -->
+
+
                 <li class="nav-item">
-        <a class="nav-link collapsed" href="{% url 'mybets' %}">
-          <i class="bi bi-dice-5"></i>
-          <span>My Bets</span>
+        <a class="nav-link collapsed" href="{% url 'triggers' %}">
+          <i class="bi bi-flag"></i>
+          <span>Triggers</span>
         </a>
       </li><!-- End mybets Page Nav -->
 
@@ -219,17 +227,11 @@
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="{% url 'predict'%}">
-          <i class="bi bi-search"></i>
-          <span>Scan Bets</span>
-        </a>
-      </li><!-- End Scan Bets Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="{% url 'report' %}">
           <i class="bi bi-pencil-square"></i>
           <span>Self-reporting</span>
         </a>
-      </li><!-- End F.A.Q Page Nav -->
+      </li><!-- End Scan Bets Nav -->
+
 
 
 

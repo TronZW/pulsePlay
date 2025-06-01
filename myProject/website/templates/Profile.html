@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{%block content%}
+<header id="header" class="header fixed-top d-flex align-items-center">
+
+    <div class="d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center">
+            <img src="assets/img/logo.png" alt="">
+            <span class="d-none d-lg-block">PulsePlay</span>
+        </a>
+        <i class="bi bi-list toggle-sidebar-btn"></i>
+    </div><!-- End Logo -->
+
+    {% include 'navigation.html' %}
+    <main id="main" class="main">
+
+        <div class="pagetitle">
+            <h1>Profile</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html">Scan bets</a></li>
+                    <li class="breadcrumb-item active">Review</li>
+                </ol>
+            </nav>
+        </div>
+
+</header>
+<div class="container mt-5">
+  <div class="card mb-4">
+    <div class="card-body">
+      <h4 class="card-title">My Profile</h4>
+      <hr>
+      <div class="d-flex justify-content-between">
+        <span><strong>User ID:</strong></span>
+        <span>{{ user_profile.id }}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span><strong>Username:</strong></span>
+        <span>{{ user_profile.username }}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span><strong>Email:</strong></span>
+        <span>{{ user_profile.email }}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span><strong>Account Status:</strong></span>
+        <span><span class="badge bg-secondary">{{ user_profile.account_status|capfirst }}</span></span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span><strong>Balance:</strong></span>
+        <span>{{ user_profile.balance }} {{ user_profile.currency_code }}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span><strong>Last Login:</strong></span>
+        <span>{{ user_profile.last_login|date:"M d, Y - H:i" }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">📊 My Statistics</h5>
+    </div>
+    <div class="card-body">
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Total Bets:</span>
+          <strong>{{ scan_results.total_bets }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Total Stake:</span>
+          <strong>{{ scan_results.total_stake }} USD</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Average Stake:</span>
+          <strong>{{ scan_results.avg_stake }} USD</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Maximum Stake:</span>
+          <strong>{{ scan_results.max_stake }} USD</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Minimum Stake:</span>
+          <strong>{{ scan_results.min_stake }} USD</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Total Payout:</span>
+          <strong>{{ scan_results.total_payout }} USD</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Win Rate:</span>
+          <strong>{{ win_rate_percent|floatformat:2 }}%</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Total Loss:</span>
+          <strong>{{ scan_results.total_loss }} USD</strong>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+{%endblock%}

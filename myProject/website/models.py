@@ -120,6 +120,15 @@ class GamblerScanResult(models.Model):
     monetary_consumption_score = models.DecimalField(max_digits=5, decimal_places=2)
     monetary_consumption_severity = models.CharField(max_length=20)
 
+    total_bets = models.IntegerField(default=0)
+    total_stake = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    avg_stake = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    max_stake = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    min_stake = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    total_payout = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    win_rate = models.FloatField(default=0.0)
+    total_loss = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+
     cluster_label = models.CharField(max_length=50)
     objects = models.manager
 
@@ -164,6 +173,7 @@ class SelfReport(models.Model):
     username = models.CharField(max_length=150)  # Cached snapshot of the username at time of report
     report_message = models.TextField()
     reported_at = models.DateTimeField(default=timezone.now)
+    objects = models.manager
 
     class Meta:
         db_table = 'self_reports'

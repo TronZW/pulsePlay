@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{%block content%}
+<header id="header" class="header fixed-top d-flex align-items-center">
+
+    <div class="d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center">
+            <img src="assets/img/logo.png" alt="">
+            <span class="d-none d-lg-block">PulsePlay</span>
+        </a>
+        <i class="bi bi-list toggle-sidebar-btn"></i>
+    </div><!-- End Logo -->
+
+    {% include 'navigation.html' %}
+    <main id="main" class="main">
+
+        <div class="pagetitle">
+            <h1>Review</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html">My Bets</a></li>
+                    <li class="breadcrumb-item active">Review</li>
+                </ol>
+            </nav>
+        </div>
+
+</header>
+{% for message in messages %}
+<div class="alert alert-success alert-dismissible" role="alert">
+    <strong>{{message}}</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="close"></button>
+</div>
+{% endfor%}
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">SELF REPORTING</h5>
+        <p class="lead">
+            Self-reporting is a confidential tool for users who feel they may be experiencing gambling-related harm.
+            By self-reporting, you acknowledge that your account may be subject to immediate review and possible
+            deactivation to protect your wellbeing.
+        </p>
+        {%  if has_reported == True %}
+        <h4 class="card-title text-danger">Self-Report Already Submitted</h4>
+        <p class="card-text">
+            You have already submitted a self-report
+
+        </p>
+        <div class="alert alert-warning">
+            <strong>Note:</strong> Submitting multiple reports is not allowed.
+            If you need further help, please contact support directly.
+        </div>
+        {% else %}
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-circle-fill me-2"></i>
+            <div>
+                <strong>Important:</strong> Only submit this form if you are absolutely sure. Submitting this request
+                may result in your account being suspended or deactivated immediately.
+            </div>
+        </div>
+        <form method="post" action="{% url 'submitreport' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="reportMessage" class="form-label">Why are you self-reporting?</label>
+                <textarea class="form-control" id="reportMessage" name="report_message" rows="5"
+                          placeholder="Briefly describe your concerns..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-shield-fill-exclamation"></i> Submit Self-Report
+            </button>
+        </form>
+
+    </div>
+    {%endif%}
+
+</div>
+{% endblock %}

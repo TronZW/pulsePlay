@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -7,6 +7,7 @@ from .models import Gambler
 from .models import Bet
 from .models import Stats
 from .models import Trigger
+from .models import SelfReport
 import numpy as np
 import pandas as pd
 import joblib
@@ -205,6 +206,14 @@ def predict_cluster(request):
             "binge_gambling_severity": raw_results["binge_gambling_score"]["severity"],
             "monetary_consumption_score": raw_results["monetary_consumption_score"]["score_percent"],
             "monetary_consumption_severity": raw_results["monetary_consumption_score"]["severity"],
+            "total_bets": user_stats['total_bets'],
+            "total_stake": user_stats['total_stake'],
+            "avg_stake": user_stats['avg_stake'],
+            "max_stake": user_stats['max_stake'],
+            "min_stake": user_stats['min_stake'],
+            "total_payout": user_stats['total_payout'],
+            "win_rate": win_rate,
+            "total_loss": total_loss,
             "has_scan": True,
             "previous_scan": now(),
         }
@@ -352,6 +361,7 @@ def homeAdmin(request):
                 )
 
         all_triggers = Trigger.objects.select_related('gambler').order_by('-triggered_at')
+        self_reports = SelfReport.objects.all().order_by('-reported_at')[:3]
 
         context = {
             'avg_total_bets': int(aggregate_sums['avg_total_bets']),
@@ -363,7 +373,8 @@ def homeAdmin(request):
             'avg_win_count': int(aggregate_sums['avg_win_count']),
             'avg_total_loss': int(aggregate_sums['avg_total_loss']),
             'avg_win_rate': int((aggregate_sums['avg_win_rate']) * 100),
-            'triggers': all_triggers
+            'triggers': all_triggers,
+            'self_reports': self_reports
 
         }
         return render(request, "indexAdmin.html", context)
@@ -371,3 +382,101 @@ def homeAdmin(request):
     else:
         messages.success(request, "You are not allowed to access this location")
         return redirect('login')
+
+
+def selfReport(request):
+    has_reported = SelfReport.objects.filter(gambler=request.user.id).exists()
+
+    context = {
+        "has_reported": has_reported
+    }
+
+    return render(request, "self-reporting.html", context)
+
+
+def submit_self_report(request):
+    if request.method == 'POST':
+        report_message = request.POST.get('report_message', '').strip()
+
+        if not report_message:
+            messages.error(request, "Please provide a reason for self-reporting.")
+            return redirect('report')
+
+        # Create self-report record
+        SelfReport.objects.create(
+            gambler=request.user,
+            username=request.user.username,
+            report_message=report_message,
+            reported_at=now()
+        )
+
+        messages.success(request, "Your self-report has been submitted successfully.")
+        return redirect('report')
+    else:
+        messages.success(request, "Invalid request")
+        return redirect('home')
+
+
+def myProfile(request):
+    user_profile = request.user
+    scan_results = GamblerScanResult.objects.get(gambler=request.user.id)
+
+    context = {
+        'user_profile': user_profile,
+        'scan_results': scan_results,
+        'win_rate_percent': scan_results.win_rate * 100
+    }
+
+    return render(request, 'Profile.html', context)
+
+
+def getGambler(request):
+    query = request.GET.get('username', '')
+    user_profile = None
+    scan_results = None
+
+    if query:
+        user_profile = get_object_or_404(Gambler, username=query)
+        scan_results = GamblerScanResult.objects.get(gambler=user_profile.id)
+
+    return render(request, 'GamblerProfile.html', {
+        'query': query,
+        'user_profile': user_profile,
+        'scan_results': scan_results,
+        'win_rate_percent': scan_results.win_rate * 100,
+    })
+
+
+def profileAdmin(request):
+    return render(request, "GamblerProfile.html", {})
+
+
+def closeAccount(request, id):
+    gambler = get_object_or_404(Gambler, id=id)
+    if request.method == 'POST':
+        gambler.account_status = 'closed'
+        gambler.save()
+        messages.success(request, f"Account for {gambler.username} has been closed.")
+    return redirect('profilesAdmin')
+
+
+def suspendAccount(request, id):
+    gambler = get_object_or_404(Gambler, id=id)
+    if request.method == 'POST':
+        gambler.account_status = 'suspended'
+        gambler.save()
+        messages.warning(request, f"Account for {gambler.username} has been suspended.")
+    return redirect('profilesAdmin')
+
+
+def activateAccount(request, id):
+    gambler = get_object_or_404(Gambler, id=id)
+    if request.method == 'POST':
+        gambler.account_status = 'active'
+        gambler.save()
+        messages.success(request, f"Account for {gambler.username} has been activated.")
+    return redirect('profilesAdmin')
+
+
+def gamblerTriggers(request):
+    return render(request, "Triggers.html", {})
