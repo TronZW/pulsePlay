@@ -438,12 +438,17 @@ def getGambler(request):
     if query:
         user_profile = get_object_or_404(Gambler, username=query)
         scan_results = GamblerScanResult.objects.get(gambler=user_profile.id)
+        unresolved_trigger = Trigger.objects.filter(
+            gambler=user_profile,
+            actions_taken="None"
+        ).exists()
 
     return render(request, 'GamblerProfile.html', {
         'query': query,
         'user_profile': user_profile,
         'scan_results': scan_results,
         'win_rate_percent': scan_results.win_rate * 100,
+        'unresolved_trigger': unresolved_trigger,
     })
 
 
@@ -479,4 +484,142 @@ def activateAccount(request, id):
 
 
 def gamblerTriggers(request):
-    return render(request, "Triggers.html", {})
+    # Step 1: Annotate per-user stats
+    user_stats = (
+        Bet.objects.values('gambler')
+        .annotate(
+            total_bets=Count('gambler_id'),
+            total_stake=Coalesce(Sum('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+            avg_stake=Coalesce(Avg('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+            total_payout=Coalesce(Sum('payout_amount'), Decimal('0.00'), output_field=DecimalField()),
+            max_stake=Coalesce(Max('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+            min_stake=Coalesce(Min('stake_amount'), Decimal('0.00'), output_field=DecimalField()),
+            win_count=Count('gambler_id', filter=Q(bet_status='won')),
+            total_loss=Coalesce(Sum(
+                ExpressionWrapper(F('stake_amount') - F('payout_amount'), output_field=FloatField())
+                , filter=~Q(bet_status='won')), 0.0),
+        )
+        .annotate(
+            win_rate=ExpressionWrapper(
+                F('win_count') * 1.0 / F('total_bets'),
+                output_field=FloatField()
+            )
+        )
+        .filter(total_bets__gte=15)
+    )
+
+    # Step 2: Compute average of each stat across users
+    user_count = user_stats.count() or 1  # avoid division by zero
+
+    # Convert QuerySet to list to iterate multiple times
+    user_stats_list = list(user_stats)
+
+    # Step 3: Sum all per-user values
+    aggregate_sums = {
+        'avg_total_bets': sum(u['total_bets'] for u in user_stats_list) / user_count,
+        'avg_total_stake': sum(u['total_stake'] for u in user_stats_list) / user_count,
+        'avg_avg_stake': sum(u['avg_stake'] for u in user_stats_list) / user_count,
+        'avg_max_stake': sum(u['max_stake'] for u in user_stats_list) / user_count,
+        'avg_min_stake': sum(u['min_stake'] for u in user_stats_list) / user_count,
+        'avg_total_payout': sum(u['total_payout'] for u in user_stats_list) / user_count,
+        'avg_win_count': sum(u['win_count'] for u in user_stats_list) / user_count,
+        'avg_total_loss': sum(u['total_loss'] for u in user_stats_list) / user_count,
+        'avg_win_rate': sum(u['win_rate'] for u in user_stats_list) / user_count,
+    }
+
+    # Round results (optional)
+    aggregate_sums = {k: round(v, 4) for k, v in aggregate_sums.items()}
+    Stats.objects.update_or_create(
+        id=1,  # or some known identifier
+        defaults={
+            'avg_total_bets': aggregate_sums['avg_total_bets'],
+            'avg_total_stake': aggregate_sums['avg_total_stake'],
+            'avg_avg_stake': aggregate_sums['avg_avg_stake'],
+            'avg_max_stake': aggregate_sums['avg_max_stake'],
+            'avg_min_stake': aggregate_sums['avg_min_stake'],
+            'avg_total_payout': aggregate_sums['avg_total_payout'],
+            'avg_win_count': aggregate_sums['avg_win_count'],
+            'avg_total_loss': aggregate_sums['avg_total_loss'],
+            'avg_win_rate': aggregate_sums['avg_win_rate'],
+        }
+    )
+    # code for detecting the triggers found in the gambler's data
+    HIGH_STAKE_THRESHOLD = Decimal('450.00')
+
+    # Get all bets above the threshold
+    high_bets = Bet.objects.filter(stake_amount__gte=HIGH_STAKE_THRESHOLD)
+
+    for bet in high_bets:
+        gambler = bet.gambler
+        highest_bet = Bet.objects.filter(gambler=gambler).aggregate(Max('stake_amount'))['stake_amount__max']
+        # Checking  if a 'highest_bet' trigger already exists for this gambler
+        trigger_exists = Trigger.objects.filter(
+            gambler=gambler,
+            trigger_type='highest_bet'
+        ).exists()
+
+        if not trigger_exists:
+            Trigger.objects.create(
+                gambler=gambler,
+                trigger_type='highest_bet',
+                value=highest_bet,
+                explanation="Extremely high stake detected",
+                actions_taken="None"
+            )
+
+    all_triggers = Trigger.objects.select_related('gambler').order_by('-triggered_at')
+    self_reports = SelfReport.objects.all().order_by('-reported_at')[:3]
+
+    context = {
+        'avg_total_bets': int(aggregate_sums['avg_total_bets']),
+        'avg_total_stake': int(aggregate_sums['avg_total_stake']),
+        'avg_avg_stake': int(aggregate_sums['avg_avg_stake']),
+        'avg_max_stake': int(aggregate_sums['avg_max_stake']),
+        'avg_min_stake': int(aggregate_sums['avg_min_stake']),
+        'avg_total_payout': int(aggregate_sums['avg_total_payout']),
+        'avg_win_count': int(aggregate_sums['avg_win_count']),
+        'avg_total_loss': int(aggregate_sums['avg_total_loss']),
+        'avg_win_rate': int((aggregate_sums['avg_win_rate']) * 100),
+        'triggers': all_triggers,
+        'self_reports': self_reports
+
+    }
+    return render(request, "Triggers.html", context)
+
+
+def resolve_trigger(request, user_id):
+    if request.method == 'POST':
+        action = request.POST.get('action_taken')
+
+        # Validate action
+        valid_actions = ['Suspend Account', 'Close Account', 'Send Warning']
+        if action not in valid_actions:
+            messages.error(request, "Invalid action selected.")
+            return redirect('profilesAdmin')
+
+        # Get the gambler
+        gambler = get_object_or_404(Gambler, id=user_id)
+
+        # Get the latest unresolved trigger
+        trigger = Trigger.objects.filter(gambler=gambler, actions_taken="None").order_by('-triggered_at').first()
+        if not trigger:
+            messages.warning(request, "No unresolved trigger found.")
+            return redirect('profilesAdmin')
+
+        # Perform the action
+        if action == 'Suspend Account':
+            gambler.account_status = 'suspended'
+        elif action == 'Close Account':
+            gambler.account_status = 'closed'
+        elif action == 'Send Warning':
+            # Optional: send email or flag gambler
+            pass
+
+        gambler.save()
+
+        # Update the trigger
+        trigger.actions_taken = action
+        trigger.save()
+
+        messages.success(request, f"{action} successfully applied to {gambler.username}.")
+        return redirect('profilesAdmin')  # Again, replace with actual view name

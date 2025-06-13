@@ -64,6 +64,13 @@
       <span><strong>Last Login:</strong></span>
       <span>{{ user_profile.last_login|date:"M d, Y - H:i" }}</span>
     </div>
+     {% if unresolved_trigger %}
+  <div class="alert alert-warning mt-3 d-flex justify-content-between align-items-center">
+    <span>⚠️ This gambler has at least one unresolved trigger.</span>
+    <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#fixTriggerModal">Fix Now</a>
+  </div>
+{% endif %}
+
 
     <!-- Actions Row -->
     <hr>
@@ -110,4 +117,35 @@
     <div class="alert alert-danger">No user found with username <strong>{{ query }}</strong>.</div>
   {% endif %}
 </div>
+<!-- Trigger Actions Modal -->
+<div class="modal fade" id="fixTriggerModal" tabindex="-1" aria-labelledby="fixTriggerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="fixTriggerModalLabel">Resolve Trigger</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Choose an action to resolve the latest unresolved trigger:</p>
+          {% if user_profile %}
+        <form method="post" action="{% url 'resolve_trigger' user_profile.id %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <select name="action_taken" class="form-select" required>
+              <option value="">-- Select Action --</option>
+              <option value="Suspend Account">Suspend Account</option>
+              <option value="Close Account">Close Account</option>
+              <option value="Send Warning">Send Warning</option>
+            </select>
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary">Submit Action</button>
+          </div>
+        </form>
+          {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

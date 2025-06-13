@@ -14,15 +14,53 @@
     <main id="main" class="main">
 
         <div class="pagetitle">
-            <h1>Review</h1>
+            <h1>Triggers</h1>
             <nav>
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="index.html">Scan bets</a></li>
-                    <li class="breadcrumb-item active">Review</li>
+                    <li class="breadcrumb-item active"></li>
                 </ol>
             </nav>
         </div>
 
 </header>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Potential triggers</h5>
+        <table class="table table-borderless datatable">
+            <thead>
+            <tr>
+                <th scope="col">id</th>
+                <th scope="col">Trigger type</th>
+                <th scope="col">Explanation</th>
+                <th scope="col">Value</th>
+                <th scope="col">Gambler</th>
+                <th scope="col">Actions Taken</th>
+                <th scope="col">Triggered At</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for trigger in triggers %}
+            <tr>
+                <td>{{ trigger.id }}</td>
+                <td>{{ trigger.trigger_type }}</td>
+                <td>{{ trigger.explanation }}</td>
+                <td>{{ trigger.value }}</td>
+                <td>
+                    <a href="{% url 'gambler' %}?username={{ trigger.gambler.username }}">
+                        {{ trigger.gambler.username }}
+                    </a>
+                </td>
+                <td>{{ trigger.actions_taken }}</td>
+                <td>{{ trigger.triggered_at }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+
+    </div>
+</div><!-- End Default Card -->
 
 {% endblock %}
