@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Gambling Behavior Alert</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #d32f2f;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .content h2 {
+            color: #d32f2f;
+        }
+
+        .content p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .footer {
+            background-color: #eeeeee;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+
+        .button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background-color: #d32f2f;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .patterns {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffecb5;
+            padding: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>PulsePlay</h1>
+        </div>
+        <div class="content">
+            <h2>Hello {{ user }},</h2>
+            <p>
+                Our system has detected signs of potentially harmful gambling behavior on your account.
+                Please review the following risk indicators:
+            </p>
+
+            <div class="patterns">
+                <ul>
+                    {% if patterns.loss_chasing %}<li>Loss Chasing Detected</li>{% endif %}
+                    {% if patterns.binge_gambling %}<li>Binge Gambling Activity</li>{% endif %}
+                    {% if patterns.fluctuating_wagers %}<li>Fluctuating Bet Amounts</li>{% endif %}
+                    {% if patterns.impulsive_transactions %}<li>Impulsive Transactions</li>{% endif %}
+                    {% if patterns.monetary_consumption %}<li>High Monetary Consumption</li>{% endif %}
+                    <li>{{trigger}}</li>
+                </ul>
+            </div>
+
+            <p>
+                If you feel that your gambling behavior is getting out of control, we strongly encourage you to take a break or seek help.
+            </p>
+
+            <a class="button" href="https://www.begambleaware.org" target="_blank">Get Support</a>
+
+            <p style="margin-top: 20px;">
+                If you have any questions or need assistance, feel free to contact our support team.
+            </p>
+        </div>
+        <div class="footer">
+            &copy; {{ current_year }} PulsePlay. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

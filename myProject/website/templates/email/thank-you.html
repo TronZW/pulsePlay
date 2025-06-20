@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Account Action Taken</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            background-color: #d32f2f;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .content h2 {
+            color: #d32f2f;
+            margin-top: 0;
+        }
+
+        .content p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333333;
+        }
+
+        .action-box {
+            background-color: #fff4e5;
+            border-left: 5px solid #ffa000;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .footer {
+            background-color: #eeeeee;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .support-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 18px;
+            background-color: #d32f2f;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Action Taken on Your Account</h1>
+        </div>
+        <div class="content">
+            <h2>Hello {{ user }},</h2>
+            <p>
+                We want to thank you for submitting a self-report regarding your gambling activity. We take all reports seriously and prioritize the well-being of our users.
+            </p>
+
+            <div class="action-box">
+                As requested or deemed necessary, your account has been <strong>{{ action_taken }}</strong> on <strong>{{ action_date }}</strong>.
+            </div>
+
+            <p>
+                This action has been taken in accordance with our responsible gambling policy and to ensure your safety. If you believe this action was taken in error, or if you would like to discuss it further, our support team is available to assist you.
+            </p>
+
+            <a href="https://www.begambleaware.org" target="_blank" class="support-link">Find Support Resources</a>
+
+            <p>
+                Thank you again for your honesty and responsibility.
+            </p>
+        </div>
+        <div class="footer">
+            &copy; {{ current_year }} pulsePlay · All rights reserved
+        </div>
+    </div>
+</body>
+</html>

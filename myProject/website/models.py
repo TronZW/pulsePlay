@@ -175,6 +175,8 @@ class SelfReport(models.Model):
     reported_at = models.DateTimeField(default=timezone.now)
     objects = models.manager
 
+    action = models.CharField(max_length=255, default='none')
+
     class Meta:
         db_table = 'self_reports'
         ordering = ['-reported_at']

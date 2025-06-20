@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{%block content%}
+<header id="header" class="header fixed-top d-flex align-items-center">
+
+    <div class="d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center">
+            <img src="assets/img/logo.png" alt="">
+            <span class="d-none d-lg-block">PulsePlay</span>
+        </a>
+        <i class="bi bi-list toggle-sidebar-btn"></i>
+    </div><!-- End Logo -->
+
+    {% include 'navigation.html' %}
+    <main id="main" class="main">
+
+        <div class="pagetitle">
+            <h1>Review</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html">Reports</a></li>
+                    <li class="breadcrumb-item active">Review</li>
+                </ol>
+            </nav>
+        </div>
+
+</header>
+{% for message in messages %}
+<div class="alert alert-success alert-dismissible" role="alert">
+    <strong>{{message}}</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="close"></button>
+</div>
+{% endfor%}
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">SELF REPORTING HISTORY</h5>
+         <table class="table table-borderless datatable">
+            <thead>
+            <tr>
+                <th scope="col">id</th>
+                <th scope="col">Username</th>
+                <th scope="col">Report message</th>
+                <th scope="col">Reported At</th>
+                <th scope="col">Actions Taken</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for report in reports %}
+            <tr>
+                <td>{{ report.id }}</td>
+                <td>
+                    <a href="{% url 'gambler' %}?username={{ report.gambler.username }}">
+                        {{ report.username }}
+                    </a>
+                </td>
+                <td>{{ report.report_message }}</td>
+                <td>{{ report.reported_at }}</td>
+                    <td>{{ report.action}}</td>
+            {% endfor %}
+            </tbody>
+        </table>
+
+
+
+
+    </div>
+
+
+</div>
+{% endblock %}

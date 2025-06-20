@@ -20,6 +20,10 @@ urlpatterns = [
     path('activate/<int:id>/', views.activateAccount, name='activate_account'),
     path('profiles/', views.profileAdmin, name='profilesAdmin'),
     path('triggers/', views.gamblerTriggers, name='triggers'),
-    path('act/<int:user_id>/', views.resolve_trigger, name='resolve_trigger')
+    path('reports/', views.reports, name='reports'),
+    path('act/<int:user_id>/', views.resolve_trigger, name='resolve_trigger'),
+    path('resolve/<int:user_id>/', views.resolve_report, name='resolve_report')
+
+
 
 ]

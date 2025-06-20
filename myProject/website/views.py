@@ -14,12 +14,15 @@ import joblib
 from django.db.models.functions import Coalesce
 from django.db.models import FloatField, ExpressionWrapper
 import os
+import datetime
 from decimal import Decimal
 from django.db.models import DecimalField
 from .randomForest import *
 from .models import GamblerScanResult
 from django.utils.timezone import now
 from django.core.paginator import Paginator
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'models')
 kmeans = joblib.load(os.path.join(MODEL_PATH, 'kmeans_model.pkl'))
@@ -29,59 +32,49 @@ scaler = joblib.load(os.path.join(MODEL_PATH, 'scaler.pkl'))
 # Create your views here.
 def home(request):
     if request.user.is_authenticated:
-        if request.user.is_superuser == 0:
-            try:
-                total_bets = Bet.objects.filter(gambler=request.user.id).count()
-                bets_won = Bet.objects.filter(Q(gambler=request.user.id) & Q(bet_status="won")).count()
-                win_rate = int((bets_won / total_bets) * 100)
-                slip = Bet.objects.filter(gambler=request.user.id)
-                try:
-                    scan = GamblerScanResult.objects.filter(gambler=request.user.id).latest('previous_scan')
-                    has_scan = True
-                    # Extract previous scores from the scan object, adjust attribute names accordingly
-                    patterns = {
-                        "loss chasing": float(scan.loss_chasing_score),
-                        "binge gambling": float(scan.binge_gambling_score),
-                        "fluctuating wagers": float(scan.fluctuating_wagers_score),
-                        "impulsive transactions": float(scan.impulsive_transactions_score),
-                        "monetary consumption": float(scan.monetary_consumption_score)
-                    }
-                    high_risk_patterns = {k: v for k, v in patterns.items() if v > 40}
+        total_bets = Bet.objects.filter(gambler=request.user.id).count()
+        bets_won = Bet.objects.filter(Q(gambler=request.user.id) & Q(bet_status="won")).count()
+        win_rate = int((bets_won / total_bets) * 100)
+        slip = Bet.objects.filter(gambler=request.user.id)
+        try:
+            scan = GamblerScanResult.objects.filter(gambler=request.user.id).latest('previous_scan')
+            cluster = scan.cluster_label
+            has_scan = True
+            # Extract previous scores from the scan object, adjust attribute names accordingly
+            patterns = {
+                "loss chasing": float(scan.loss_chasing_score),
+                "binge gambling": float(scan.binge_gambling_score),
+                "fluctuating wagers": float(scan.fluctuating_wagers_score),
+                "impulsive transactions": float(scan.impulsive_transactions_score),
+                "monetary consumption": float(scan.monetary_consumption_score)
+            }
+            high_risk_patterns = {k: v for k, v in patterns.items() if v > 40}
 
-                    pattern_scores = [
-                        float(scan.loss_chasing_score),
-                        float(scan.binge_gambling_score),
-                        float(scan.fluctuating_wagers_score),
-                        float(scan.impulsive_transactions_score),
-                        float(scan.monetary_consumption_score)
-                    ]
-                except Exception as e:
-                    has_scan = False
-                    pattern_scores = []
-                    high_risk_patterns = {}
+            pattern_scores = [
+                float(scan.loss_chasing_score),
+                float(scan.binge_gambling_score),
+                float(scan.fluctuating_wagers_score),
+                float(scan.impulsive_transactions_score),
+                float(scan.monetary_consumption_score)
+            ]
+        except Exception as e:
+            has_scan = False
+            pattern_scores = []
+            high_risk_patterns = {}
+            cluster = ""
 
-                context = {
-                    "bets": total_bets,
-                    "wins": bets_won,
-                    "rate": win_rate,
-                    "slip": slip,
-                    "has_scan": has_scan,
-                    "pattern_scores": pattern_scores,
-                    "high_risk_patterns": high_risk_patterns,
-                    "risk_cluster": scan.cluster_label
+        context = {
+            "bets": total_bets,
+            "wins": bets_won,
+            "rate": win_rate,
+            "slip": slip,
+            "has_scan": has_scan,
+            "pattern_scores": pattern_scores,
+            "high_risk_patterns": high_risk_patterns,
+            "risk_cluster": cluster
 
-                }
-                return render(request, "index.html", context)
-
-            except Exception as e:
-
-                total_bets = 404
-
-                context = {
-                    "bets": total_bets,
-
-                }
-                return render(request, "index.html", context)
+        }
+        return render(request, "index.html", context)
     else:
         messages.success(request, "You are not allowed to access this location")
         return redirect('login')
@@ -443,12 +436,18 @@ def getGambler(request):
             actions_taken="None"
         ).exists()
 
+        unresolved_report = SelfReport.objects.filter(
+            gambler=user_profile,
+            action="none"
+        ).exists()
+
     return render(request, 'GamblerProfile.html', {
         'query': query,
         'user_profile': user_profile,
         'scan_results': scan_results,
         'win_rate_percent': scan_results.win_rate * 100,
         'unresolved_trigger': unresolved_trigger,
+        'unresolved_report': unresolved_report,
     })
 
 
@@ -612,14 +611,87 @@ def resolve_trigger(request, user_id):
         elif action == 'Close Account':
             gambler.account_status = 'closed'
         elif action == 'Send Warning':
-            # Optional: send email or flag gambler
-            pass
+            send_behavior_alert_email(gambler.email, gambler.username, trigger.explanation)
+            messages.success(request, "The email has been sent successfully")
 
         gambler.save()
 
         # Update the trigger
         trigger.actions_taken = action
         trigger.save()
+
+        messages.success(request, f"{action} successfully applied to {gambler.username}.")
+        return redirect('profilesAdmin')  # Again, replace with actual view name
+
+
+def send_behavior_alert_email(gambler_email, gambler_name, detected_patterns):
+    subject = 'Gambling Behavior Alert'
+    message = render_to_string('email/gambling_alert.html', {
+        'user': gambler_name,
+        'trigger': detected_patterns,
+        'current_year': datetime.datetime.now().year
+    })
+    email = EmailMessage(subject, message, to=[gambler_email])
+    email.content_subtype = "html"
+    email.send()
+
+
+def report_action_email(gambler_email, gambler_name, action_taken):
+    subject = 'Gambling Behavior Alert'
+    message = render_to_string('email/thank-you.html', {
+        'user': gambler_name,
+        'action_taken': action_taken,
+        'action_date': datetime.datetime.now().strftime("%B %d, %Y"),
+        'current_year': datetime.datetime.now().year
+    })
+    email = EmailMessage(subject, message, to=[gambler_email])
+    email.content_subtype = "html"
+    email.send()
+
+
+def reports(request):
+    selfreports = SelfReport.objects.all()
+    context = {
+        'reports': selfreports
+
+    }
+    return render(request, "self-reports.html", context)
+
+
+def resolve_report(request, user_id):
+    if request.method == 'POST':
+        action = request.POST.get('action_taken')
+
+        # Validate action
+        valid_actions = ['Suspend Account', 'Close Account']
+        if action not in valid_actions:
+            messages.error(request, "Invalid action selected.")
+            return redirect('profilesAdmin')
+
+        # Get the gambler
+        gambler = get_object_or_404(Gambler, id=user_id)
+
+        # Get the latest unresolved report
+        report = SelfReport.objects.filter(gambler=gambler, action="none").order_by('-reported_at').first()
+        if not report:
+            messages.warning(request, "No unresolved report found.")
+            return redirect('profilesAdmin')
+
+        # Perform the action
+        if action == 'Suspend Account':
+            gambler.account_status = 'suspended'
+            report_action_email(gambler.email, gambler.username, gambler.account_status)
+            messages.success(request,"Account suspended successfully")
+        elif action == 'Close Account':
+            gambler.account_status = 'closed'
+            report_action_email(gambler.email, gambler.username, gambler.account_status)
+            messages.success(request, "Account closed successfully")
+
+        gambler.save()
+
+        # Update the trigger
+        report.action = action
+        report.save()
 
         messages.success(request, f"{action} successfully applied to {gambler.username}.")
         return redirect('profilesAdmin')  # Again, replace with actual view name

@@ -24,6 +24,12 @@
         </div>
 
 </header>
+{% for message in messages %}
+    <div class="alert alert-success alert-dismissible" role="alert">
+  <strong>{{message}}</strong>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="close"></button>
+</div>
+   {% endfor%}
 </div>
 <div class="card">
     <div class="card-body">

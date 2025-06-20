@@ -71,6 +71,13 @@
   </div>
 {% endif %}
 
+      {% if unresolved_report %}
+  <div class="alert alert-warning mt-3 d-flex justify-content-between align-items-center">
+    <span>⚠️ This gambler has self-reported. Attend the report </span>
+    <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#fixReportModal">Fix Now</a>
+  </div>
+{% endif %}
+
 
     <!-- Actions Row -->
     <hr>
@@ -136,6 +143,36 @@
               <option value="Suspend Account">Suspend Account</option>
               <option value="Close Account">Close Account</option>
               <option value="Send Warning">Send Warning</option>
+            </select>
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary">Submit Action</button>
+          </div>
+        </form>
+          {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Report Actions Modal -->
+<div class="modal fade" id="fixReportModal" tabindex="-1" aria-labelledby="fixReportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="fixReportModalLabel">Resolve Report</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Choose an action to resolve the latest report:</p>
+          {% if user_profile %}
+        <form method="post" action="{% url 'resolve_report' user_profile.id %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <select name="action_taken" class="form-select" required>
+              <option value="">-- Select Action --</option>
+              <option value="Suspend Account">Suspend Account</option>
+              <option value="Close Account">Close Account</option>
             </select>
           </div>
           <div class="text-end">
